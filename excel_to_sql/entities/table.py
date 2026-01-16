@@ -4,12 +4,13 @@ Table entity for schema management and UPSERT operations.
 Handles table creation, schema inference, and insert/update logic.
 """
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import pandas as pd
 import pandas.api.types as ptypes
 
-from excel_to_sql.entities.database import Database
+if TYPE_CHECKING:
+    from excel_to_sql.entities.database import Database
 
 
 class Table:
@@ -22,7 +23,7 @@ class Table:
         table.exists()  # True
     """
 
-    def __init__(self, database: Database, name: str) -> None:
+    def __init__(self, database: "Database", name: str) -> None:
         """
         Initialize table reference.
 

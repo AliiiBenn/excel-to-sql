@@ -93,7 +93,10 @@ class ExcelFile:
             raise ValueError(f"Not an Excel file: {self._path}")
 
         try:
-            return pd.read_excel(self._path, sheet_name=sheet_name, engine="openpyxl")
+            # Use sheet_name=0 to read first sheet when None specified
+            # (pd.read_excel returns dict when sheet_name=None)
+            actual_sheet = 0 if sheet_name is None else sheet_name
+            return pd.read_excel(self._path, sheet_name=actual_sheet, engine="openpyxl")
         except Exception as e:
             raise ValueError(f"Failed to read Excel file: {e}") from e
 
