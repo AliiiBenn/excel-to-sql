@@ -3,7 +3,7 @@ CLI interface for excel-to-sql using Typer.
 """
 
 from pathlib import Path
-from typer import Typer, Option
+from typer import Typer, Option, Exit
 from rich.console import Console
 from rich.table import Table
 
@@ -48,7 +48,7 @@ def init(
 # ──────────────────────────────────────────────────────────────
 
 
-@app.command()
+@app.command("import")
 def import_cmd(
     excel_path: str = Option(..., "--file", "-f", help="Path to Excel file"),
     type: str = Option(..., "--type", "-t", help="Type configuration from mappings"),
@@ -64,12 +64,12 @@ def import_cmd(
         # 1. Validate file exists
         if not path.exists():
             console.print(f"[red]Error:[/red] File not found: {excel_path}")
-            raise typer.Exit(1)
+            raise Exit(1)
 
         # 2. Validate file extension
         if path.suffix.lower() not in {".xlsx", ".xls"}:
             console.print(f"[red]Error:[/red] Not an Excel file: {excel_path}")
-            raise typer.Exit(1)
+            raise Exit(1)
 
         # 3. Load project
         try:
@@ -77,14 +77,14 @@ def import_cmd(
         except Exception:
             console.print("[red]Error:[/red] Not an excel-to-sql project")
             console.print("  Run 'excel-to-sql init' first")
-            raise typer.Exit(1)
+            raise Exit(1)
 
         # 4. Validate type exists
         if type not in project.mappings:
             console.print(f"[red]Error:[/red] Unknown type: '{type}'")
             available_types = ", ".join(project.list_types())
             console.print(f"  Available types: {available_types}")
-            raise typer.Exit(1)
+            raise Exit(1)
 
         mapping = project.mappings[type]
 
@@ -96,7 +96,7 @@ def import_cmd(
         # Validate file is readable
         if not excel_file.validate():
             console.print("[red]Error:[/red] Invalid or corrupted Excel file")
-            raise typer.Exit(1)
+            raise Exit(1)
 
         # Get content hash
         content_hash = excel_file.content_hash
@@ -116,7 +116,7 @@ def import_cmd(
                 record = history.iloc[0]
                 console.print(f"  Imported: {record['imported_at']}")
                 console.print(f"  Rows: {record['rows_imported']}")
-            raise typer.Exit(0)
+            raise Exit(0)
 
         # 7. Read data
         console.print("[dim]Loading data...[/dim]")
@@ -148,6 +148,13 @@ def import_cmd(
         console.print(f"  Updated: {stats['updated']}")
 
         # 11. Record import in history
+        # If using --force and content_hash exists, delete old record first
+        if force and project.database.is_imported(content_hash):
+            project.database.execute(
+                "DELETE FROM _import_history WHERE content_hash = :hash",
+                {"hash": content_hash}
+            )
+
         project.database.record_import(
             file_name=excel_file.name,
             file_path=str(path.absolute()),
@@ -178,13 +185,13 @@ def import_cmd(
 
     except FileNotFoundError:
         console.print(f"[red]Error:[/red] File not found: {excel_path}")
-        raise typer.Exit(1)
+        raise Exit(1)
 
     except ValueError as e:
         console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
+        raise Exit(1)
 
-    except typer.Exit:
+    except Exit:
         # Re-raise Exit exceptions (they're intentional)
         raise
 
@@ -193,7 +200,7 @@ def import_cmd(
         console.print(f"  {e}")
         if "--debug" in sys.argv:
             console.print(traceback.format_exc())
-        raise typer.Exit(1)
+        raise Exit(1)
 
 
 # ──────────────────────────────────────────────────────────────
@@ -201,7 +208,7 @@ def import_cmd(
 # ──────────────────────────────────────────────────────────────
 
 
-@app.command()
+@app.command("export")
 def export_cmd(
     output: str = Option(..., "--output", "-o", help="Output Excel file path"),
     table: str = Option(None, "--table", help="Export entire table"),
@@ -210,7 +217,7 @@ def export_cmd(
     """Export data from database to Excel."""
     if not table and not query:
         console.print("[red]Error:[/red] Must specify --table or --query")
-        raise typer.Exit(1)
+        raise Exit(1)
 
     console.print(f"[bold cyan]Exporting to {output}...[/bold cyan]")
 
