@@ -10,6 +10,8 @@ from typing import Optional
 from sqlalchemy import create_engine, Engine, text
 import pandas as pd
 
+from excel_to_sql.entities.table import Table
+
 
 class Database:
     """
@@ -114,7 +116,7 @@ class Database:
             result = conn.execute(text(sql), params or {})
             return result.rowcount
 
-    def get_table(self, name: str):
+    def get_table(self, name: str) -> Table:
         """
         Get a Table entity for this database.
 
@@ -122,11 +124,9 @@ class Database:
             name: Table name
 
         Returns:
-            Table entity (to be implemented in Phase 2)
+            Table entity for the specified table
         """
-        # Placeholder for Phase 2
-        # For now, return None
-        return None
+        return Table(self, name)
 
     def table_exists(self, name: str) -> bool:
         """Check if a table exists."""
@@ -246,3 +246,10 @@ class Database:
             ON _import_history(file_type)
         """
         self.execute(index_sql)
+
+    def dispose(self) -> None:
+        """Dispose the database engine and close all connections."""
+        if self._engine is not None:
+            self._engine.dispose()
+            self._engine = None
+
