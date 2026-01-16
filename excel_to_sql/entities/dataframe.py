@@ -150,6 +150,8 @@ class DataFrame:
                     {
                         "TRUE": True,
                         "FALSE": False,
+                        "True": True,
+                        "False": False,
                         "1": True,
                         "0": False,
                         True: True,
