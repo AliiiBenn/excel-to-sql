@@ -11,6 +11,7 @@ import pandas as pd
 from excel_to_sql.entities.project import Project
 from excel_to_sql.entities.excel_file import ExcelFile
 from excel_to_sql.entities.dataframe import DataFrame
+from excel_to_sql.__version__ import __version__
 
 app = Typer(
     name="excel-to-sql",
@@ -422,6 +423,22 @@ def status() -> None:
     console.print(f"  Total skipped: {total_skipped}")
     console.print(f"  Success rate: {success_rate:.1f}%")
     console.print(f"  Last import: {last_import_str}")
+
+
+# ──────────────────────────────────────────────────────────────
+# Command: VERSION
+# ──────────────────────────────────────────────────────────────
+
+
+@app.command()
+def version() -> None:
+    """Show version information."""
+    console.print(f"[bold cyan]excel-to-sql[/bold cyan] version [bold green]{__version__}[/bold green]")
+    console.print("")
+    console.print("[dim]GitHub:[/dim] https://github.com/AliiiBenn/excel-to-sql")
+    console.print("[dim]PyPI:[/dim] https://pypi.org/project/excel-to-sql/")
+    console.print("")
+    console.print(f"[dim]Python: {__import__('sys').version.split()[0]}[/dim]")
 
 
 # ──────────────────────────────────────────────────────────────
