@@ -6,6 +6,7 @@ from pathlib import Path
 from typer import Typer, Option, Exit
 from rich.console import Console
 from rich.table import Table
+import pandas as pd
 
 from excel_to_sql.entities.project import Project
 from excel_to_sql.entities.excel_file import ExcelFile
@@ -215,15 +216,130 @@ def export_cmd(
     query: str = Option(None, "--query", help="Custom SQL query"),
 ) -> None:
     """Export data from database to Excel."""
+    # Validation
     if not table and not query:
         console.print("[red]Error:[/red] Must specify --table or --query")
         raise Exit(1)
 
+    if table and query:
+        console.print("[red]Error:[/red] Cannot specify both --table and --query")
+        raise Exit(1)
+
+    try:
+        # Load project
+        project = Project.from_current_directory()
+    except Exception:
+        console.print("[red]Error:[/red] Not an excel-to-sql project")
+        console.print("[dim]Run 'excel-to-sql init' to initialize[/dim]")
+        raise Exit(1)
+
     console.print(f"[bold cyan]Exporting to {output}...[/bold cyan]")
 
-    # TODO: Phase 4 - Implement export logic
-    console.print("[yellow]Command not implemented yet[/yellow]")
-    console.print("  This will be implemented in Phase 4")
+    try:
+        # Execute export
+        if table:
+            # Export table
+            console.print(f"  Table: {table}")
+            try:
+                df = project.database.export_table(table)
+                source_desc = f"table '{table}'"
+            except ValueError as e:
+                console.print(f"[red]Error:[/red] {e}")
+                raise Exit(1)
+        else:
+            # Export query
+            console.print(f"  Query: {query[:50]}...")
+            # Validate query starts with SELECT
+            if not query.strip().upper().startswith("SELECT"):
+                console.print("[red]Error:[/red] Query must start with SELECT")
+                raise Exit(1)
+
+            try:
+                df = project.database.query(query)
+                source_desc = "custom query"
+            except Exception as e:
+                console.print(f"[red]Error:[/red] Invalid SQL query")
+                console.print(f"[dim]{e}[/dim]")
+                raise Exit(1)
+
+        # Check for empty results
+        if len(df) == 0:
+            console.print("[yellow]Warning:[/yellow] No data to export")
+            raise Exit(0)
+
+        # Create output directory if needed
+        output_path = Path(output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write to Excel with formatting
+        with pd.ExcelWriter(str(output_path), engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Sheet1')
+
+            # Apply formatting
+            worksheet = writer.sheets['Sheet1']
+
+            # Bold headers
+            for cell in worksheet[1]:
+                cell.font = cell.font.copy(bold=True)
+
+            # Auto-adjust column widths
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+
+                adjusted_width = min(max_length + 2, 50)  # Cap at 50
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+
+            # Freeze header row
+            worksheet.freeze_panes = 'A2'
+
+        # Record export history
+        project.database.record_export(
+            table_name=table,
+            query=query,
+            output_path=str(output_path),
+            row_count=len(df)
+        )
+
+        # Display summary
+        console.print("")
+        console.print("[bold green]OK[/bold green] Export completed successfully")
+        console.print("")
+        summary_table = Table(title="Export Summary")
+        summary_table.add_column("Metric", style="cyan")
+        summary_table.add_column("Value", style="green")
+
+        summary_table.add_row("Source", source_desc)
+        summary_table.add_row("Output", str(output_path))
+        summary_table.add_row("Rows", str(len(df)))
+        summary_table.add_row("Columns", str(len(df.columns)))
+
+        # Get file size
+        file_size = output_path.stat().st_size
+        if file_size > 1024 * 1024:
+            size_str = f"{file_size / (1024 * 1024):.2f} MB"
+        elif file_size > 1024:
+            size_str = f"{file_size / 1024:.2f} KB"
+        else:
+            size_str = f"{file_size} bytes"
+
+        summary_table.add_row("File size", size_str)
+
+        console.print(summary_table)
+
+    except Exit:
+        raise
+    except Exception as e:
+        console.print(f"[red]Error:[/red] Export failed")
+        console.print(f"[dim]{e}[/dim]")
+        raise Exit(1)
 
 
 # ──────────────────────────────────────────────────────────────
