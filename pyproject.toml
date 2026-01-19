@@ -1,12 +1,12 @@
 [project]
 name = "excel-to-sql"
-version = "0.1.0"
+version = "0.1.1"
 description = "CLI tool for importing Excel files to SQL and exporting back"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-    { name = "Ali Bennamane", email = "ali.bennamane@example.com" }
+    { name = "Code with dave", email = "davidddpereiraaa6@gmail.com" }
 ]
 keywords = ["excel", "sql", "cli", "etl", "import", "export"]
 classifiers = [
@@ -55,4 +55,4 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --strict-markers"
+addopts = "-v --strict-markers --cov=excel_to_sql --cov-report=term-missing --cov-report=html"
