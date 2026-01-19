@@ -109,7 +109,7 @@ class DataFrame:
             }
 
         What it does:
-        1. Rename columns: ID -> id, Name -> name
+        1. Rename columns: ID -> id, Name -> name (case-insensitive)
         2. Drop unmapped columns
         3. Convert types according to mapping
 
@@ -119,7 +119,9 @@ class DataFrame:
         """
         column_mappings = mapping["column_mappings"]
 
-        # Build rename dict: source -> target
+        # Build rename dict with both exact and lowercase matching
+        # This handles both cases: when clean() was called (lowercase columns)
+        # and when it wasn't (original case columns)
         rename_dict = {}
         type_conversions = {}
 
@@ -127,15 +129,25 @@ class DataFrame:
             target_col = config["target"]
             col_type = config.get("type", "string")
 
+            # Try exact match first, then lowercase
             rename_dict[source_col] = target_col
+            rename_dict[source_col.lower()] = target_col
             type_conversions[target_col] = col_type
 
-        # Rename columns
+        # Rename columns using case-insensitive matching
         self._df = self._df.rename(columns=rename_dict)
 
         # Keep only mapped columns
         mapped_columns = list(rename_dict.values())
-        self._df = self._df[mapped_columns]
+        # Remove duplicates from mapped_columns
+        seen = set()
+        unique_mapped_columns = []
+        for col in mapped_columns:
+            if col not in seen:
+                seen.add(col)
+                unique_mapped_columns.append(col)
+
+        self._df = self._df[unique_mapped_columns]
 
         # Convert types
         for col, col_type in type_conversions.items():

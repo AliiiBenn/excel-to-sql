@@ -324,6 +324,75 @@ class TestImportCommand:
 
     def test_import_with_composite_primary_key(self, runner, temp_project):
         """Test import with composite primary key."""
-        # Skip for now - composite PK UPSERT has an issue that needs fixing
-        # The Table.upsert method doesn't properly handle composite primary keys
-        pass
+        # Add mapping with composite primary key
+        temp_project.add_mapping(
+            type_name="order_items",
+            table_name="order_items",
+            primary_key=["order_id", "product_id"],  # Composite PK
+            column_mappings={
+                "Order ID": {"target": "order_id", "type": "integer"},
+                "Product ID": {"target": "product_id", "type": "integer"},
+                "Quantity": {"target": "quantity", "type": "integer"},
+            },
+        )
+
+        # Create Excel file with composite key data
+        data = pd.DataFrame(
+            {
+                "Order ID": [1, 1, 2, 2],
+                "Product ID": [10, 20, 10, 20],
+                "Quantity": [5, 3, 7, 2],
+            }
+        )
+
+        excel_path = temp_project.imports_dir / "order_items.xlsx"
+        data.to_excel(excel_path, index=False)
+
+        # First import
+        result1 = runner.invoke(
+            app, ["import", "--file", str(excel_path), "--type", "order_items"]
+        )
+
+        assert result1.exit_code == 0
+        assert "Inserted: 4" in result1.stdout
+        assert "Updated: 0" in result1.stdout
+
+        # Verify data in database
+        table = temp_project.database.get_table("order_items")
+        assert table.exists is True
+        assert table.row_count == 4
+
+        df = table.select_all()
+        assert df["quantity"].tolist() == [5, 3, 7, 2]
+
+        # Create updated Excel file (update one row, add new row)
+        updated_data = pd.DataFrame(
+            {
+                "Order ID": [1, 1, 2, 2, 3],  # 3, 30 is new
+                "Product ID": [10, 20, 10, 20, 10],
+                "Quantity": [99, 3, 7, 2, 15],  # First quantity changed to 99
+            }
+        )
+
+        updated_excel_path = temp_project.imports_dir / "order_items_v2.xlsx"
+        updated_data.to_excel(updated_excel_path, index=False)
+
+        # Second import (should update 4 existing rows, insert 1 new row)
+        # Note: UPSERT updates all rows matching PK, even if data unchanged
+        result2 = runner.invoke(
+            app, ["import", "--file", str(updated_excel_path), "--type", "order_items"]
+        )
+
+        assert result2.exit_code == 0
+        assert "Inserted: 1" in result2.stdout
+        assert "Updated: 4" in result2.stdout
+
+        # Verify final state
+        assert table.row_count == 5  # 4 original + 1 new
+
+        df_final = table.select_all()
+        # Order ID=1, Product ID=10 should have quantity=99 (updated)
+        row = df_final[
+            (df_final["order_id"] == 1) & (df_final["product_id"] == 10)
+        ].iloc[0]
+        assert row["quantity"] == 99
