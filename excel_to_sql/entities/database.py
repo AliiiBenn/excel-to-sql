@@ -159,6 +159,67 @@ class Database:
         query = "SELECT * FROM _import_history ORDER BY imported_at DESC"
         return self.query(query)
 
+    def export_table(self, table_name: str) -> pd.DataFrame:
+        """
+        Export all rows from a table to DataFrame.
+
+        Args:
+            table_name: Name of the table to export
+
+        Returns:
+            DataFrame with all table data
+
+        Raises:
+            ValueError: If table doesn't exist
+        """
+        if not self.table_exists(table_name):
+            raise ValueError(f"Table '{table_name}' does not exist")
+
+        return self.query(f"SELECT * FROM {table_name}")
+
+    def record_export(
+        self,
+        table_name: Optional[str],
+        query: Optional[str],
+        output_path: str,
+        row_count: int,
+    ) -> int:
+        """
+        Record an export in a separate history tracking table.
+
+        Args:
+            table_name: Name of exported table (if applicable)
+            query: SQL query used (if applicable)
+            output_path: Path to exported Excel file
+            row_count: Number of rows exported
+
+        Returns:
+            Row ID of inserted record
+        """
+        # Create export history table if it doesn't exist
+        self._create_export_history_table()
+
+        sql = """
+            INSERT INTO _export_history (
+                table_name, query, output_path, row_count
+            ) VALUES (
+                :table_name, :query, :output_path, :row_count
+            )
+        """
+        self.execute(
+            sql,
+            {
+                "table_name": table_name,
+                "query": query,
+                "output_path": output_path,
+                "row_count": row_count,
+            },
+        )
+
+        # Get last inserted ID
+        result = self.query("SELECT last_insert_rowid() as id")
+        return int(result.iloc[0]["id"])
+
     def record_import(
         self,
         file_name: str,
@@ -244,6 +305,27 @@ class Database:
         index_sql = """
             CREATE INDEX IF NOT EXISTS idx_import_history_type
             ON _import_history(file_type)
+        """
+        self.execute(index_sql)
+
+    def _create_export_history_table(self) -> None:
+        """Create the _export_history table if it doesn't exist."""
+        create_sql = """
+            CREATE TABLE IF NOT EXISTS _export_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                table_name TEXT,
+                query TEXT,
+                output_path TEXT NOT NULL,
+                row_count INTEGER DEFAULT 0,
+                exported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """
+        self.execute(create_sql)
+
+        # Create index for faster queries
+        index_sql = """
+            CREATE INDEX IF NOT EXISTS idx_export_history_table
+            ON _export_history(table_name)
         """
         self.execute(index_sql)
 
