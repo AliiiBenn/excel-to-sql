@@ -177,6 +177,104 @@ class Project:
         """List all configured types."""
         return list(self.mappings.keys())
 
+    def remove_mapping(self, type_name: str) -> bool:
+        """
+        Remove a type mapping from configuration.
+
+        Args:
+            type_name: Name of the type to remove
+
+        Returns:
+            True if removed, False if not found
+        """
+        mappings = self.mappings
+        if type_name not in mappings:
+            return False
+
+        del mappings[type_name]
+        self._save_mappings(mappings)
+        self._mappings = None  # Clear cache
+        return True
+
+    def validate_mappings(self) -> list[dict]:
+        """
+        Validate all mappings and return list of errors.
+
+        Returns:
+            List of error dictionaries. Empty list if all valid.
+            Each error: {"type": str, "error": str}
+        """
+        errors = []
+        mappings = self.mappings
+
+        for type_name, mapping in mappings.items():
+            # Skip example
+            if type_name.startswith("_"):
+                continue
+
+            # Check required fields
+            required_fields = ["target_table", "primary_key", "column_mappings"]
+            for field in required_fields:
+                if field not in mapping:
+                    errors.append({
+                        "type": type_name,
+                        "error": f"Missing required field: {field}"
+                    })
+
+            # Validate primary_key exists in column_mappings
+            if "primary_key" in mapping and "column_mappings" in mapping:
+                primary_key = mapping["primary_key"]
+                column_mappings = mapping["column_mappings"]
+
+                if isinstance(primary_key, list):
+                    for pk_col in primary_key:
+                        if pk_col not in column_mappings:
+                            errors.append({
+                                "type": type_name,
+                                "error": f"Primary key '{pk_col}' not found in column_mappings"
+                            })
+
+        return errors
+
+    def auto_detect_columns(self, file_path: str) -> dict:
+        """
+        Auto-detect columns and types from an Excel file.
+
+        Args:
+            file_path: Path to Excel file
+
+        Returns:
+            Dict with column names as keys and detected types as values
+            Format: {"Column Name": "integer|float|string|boolean|date"}
+        """
+        from excel_to_sql.entities.excel_file import ExcelFile
+        import pandas as pd
+        import pandas.api.types as ptypes
+
+        # Read Excel file
+        excel_file = ExcelFile(Path(file_path))
+        df = excel_file.read()
+
+        # Detect types for each column
+        columns = {}
+        for col in df.columns:
+            # Get dtype
+            dtype = df[col].dtype
+
+            if ptypes.is_integer_dtype(dtype):
+                columns[col] = "integer"
+            elif ptypes.is_float_dtype(dtype):
+                columns[col] = "float"
+            elif ptypes.is_bool_dtype(dtype):
+                columns[col] = "boolean"
+            elif ptypes.is_datetime64_any_dtype(dtype):
+                columns[col] = "date"
+            else:
+                # Default to string
+                columns[col] = "string"
+
+        return columns
+
     # ──────────────────────────────────────────────────────────────
     # PRIVATE METHODS
     # ──────────────────────────────────────────────────────────────
