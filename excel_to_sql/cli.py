@@ -433,14 +433,232 @@ def status() -> None:
 def config_cmd(
     add_type: str = Option(None, "--add-type", help="Add new type configuration"),
     table: str = Option(None, "--table", help="Target table name"),
+    pk: str = Option(None, "--pk", help="Primary key column(s), comma-separated for composite"),
+    file: str = Option(None, "--file", help="Excel file to auto-detect columns (optional with --add-type)"),
+    list: bool = Option(False, "--list", help="List all mappings"),
+    show: str = Option(None, "--show", help="Show specific mapping details"),
+    remove: str = Option(None, "--remove", help="Remove mapping"),
+    validate: bool = Option(False, "--validate", help="Validate all mappings"),
 ) -> None:
     """Manage configuration mappings."""
-    if add_type and table:
-        console.print(f"[bold cyan]Adding type: {add_type} → {table}[/bold cyan]")
-        # TODO: Phase 5 - Implement config logic
-        console.print("[yellow]Command not implemented yet[/yellow]")
+    try:
+        # Load project
+        project = Project.from_current_directory()
+    except Exception:
+        console.print("[red]Error:[/red] Not an excel-to-sql project")
+        console.print("[dim]Run 'excel-to-sql init' to initialize[/dim]")
+        raise Exit(1)
+
+    # Route to appropriate subcommand
+    if add_type:
+        _config_add_type(project, add_type, table, pk, file)
+    elif list:
+        _config_list(project)
+    elif show:
+        _config_show(project, show)
+    elif remove:
+        _config_remove(project, remove)
+    elif validate:
+        _config_validate(project)
     else:
-        console.print("[yellow]Usage: --add-type <name> --table <table>[/yellow]")
+        # Show help by default
+        console.print("[yellow]Usage:[/yellow]")
+        console.print("  excel-to-sql config --add-type <name> --table <table> --pk <columns> [--file <excel>]")
+        console.print("  excel-to-sql config --list")
+        console.print("  excel-to-sql config --show <type>")
+        console.print("  excel-to-sql config --remove <type>")
+        console.print("  excel-to-sql config --validate")
+
+
+def _config_add_type(project, add_type: str, table: str, pk: str, file: str) -> None:
+    """Add a new type mapping."""
+    # Validate required parameters
+    if not table:
+        console.print("[red]Error:[/red] --table is required when using --add-type")
+        raise Exit(1)
+
+    if not pk:
+        console.print("[red]Error:[/red] --pk is required when using --add-type")
+        raise Exit(1)
+
+    # Check if type already exists
+    if add_type in project.list_types():
+        console.print(f"[red]Error:[/red] Type '{add_type}' already exists")
+        console.print("[dim]Use --show {add_type} to view, or --remove {add_type} to delete[/dim]")
+        raise Exit(1)
+
+    # Parse primary key (comma-separated for composite)
+    primary_key = [col.strip() for col in pk.split(",")]
+
+    # Build column mappings
+    if file:
+        # Auto-detect from Excel file
+        console.print(f"[bold cyan]Auto-detecting columns from {file}...[/bold cyan]")
+
+        try:
+            detected_columns = project.auto_detect_columns(file)
+            column_mappings = {}
+            for col_name, col_type in detected_columns.items():
+                column_mappings[col_name] = {
+                    "target": col_name.lower().replace(" ", "_"),
+                    "type": col_type
+                }
+
+            console.print(f"  Detected {len(column_mappings)} columns")
+        except Exception as e:
+            console.print(f"[red]Error:[/red] Failed to read Excel file")
+            console.print(f"[dim]{e}[/dim]")
+            raise Exit(1)
+    else:
+        # Create empty mapping (user will edit manually)
+        column_mappings = {}
+        console.print("[yellow]Note:[/yellow] No --file specified. You'll need to edit config/mappings.json to add column mappings.")
+
+    # Create the mapping
+    project.add_mapping(
+        type_name=add_type,
+        table_name=table,
+        primary_key=primary_key,
+        column_mappings=column_mappings
+    )
+
+    console.print("")
+    console.print(f"[bold green]OK[/bold green] Created mapping for type '{add_type}'")
+    console.print("")
+    console.print(f"  Table: {table}")
+    console.print(f"  Primary Key: {', '.join(primary_key)}")
+    console.print(f"  Columns: {len(column_mappings)}")
+    console.print("")
+    if file:
+        console.print("[dim]Edit config/mappings.json to adjust column types and targets[/dim]")
+    else:
+        console.print("[dim]Edit config/mappings.json to add column mappings[/dim]")
+
+
+def _config_list(project) -> None:
+    """List all mappings."""
+    types = project.list_types()
+
+    # Filter out internal types (starting with _)
+    user_types = [t for t in types if not t.startswith("_")]
+
+    if len(user_types) == 0:
+        console.print("[dim]No mappings configured[/dim]")
+        console.print("[dim]Use --add-type to create one[/dim]")
+        return
+
+    # Create table
+    table = Table(title="Configured Mappings")
+    table.add_column("Type", style="cyan")
+    table.add_column("Table", style="green")
+    table.add_column("Primary Key", style="yellow")
+    table.add_column("Columns", style="magenta", justify="right")
+
+    for type_name in sorted(user_types):
+        mapping = project.get_mapping(type_name)
+
+        if mapping:
+            target_table = mapping.get("target_table", "N/A")
+            primary_key = mapping.get("primary_key", [])
+            column_mappings = mapping.get("column_mappings", {})
+
+            pk_str = ", ".join(primary_key) if isinstance(primary_key, list) else str(primary_key)
+            col_count = len(column_mappings)
+
+            table.add_row(type_name, target_table, pk_str, str(col_count))
+
+    console.print("")
+    console.print(table)
+    console.print("")
+    console.print(f"Total: {len(user_types)} mapping(s)")
+
+
+def _config_show(project, type_name: str) -> None:
+    """Show details for a specific mapping."""
+    mapping = project.get_mapping(type_name)
+
+    if not mapping:
+        console.print(f"[red]Error:[/red] Type '{type_name}' not found")
+        console.print("[dim]Use --list to see all configured types[/dim]")
+        raise Exit(1)
+
+    console.print("")
+    console.print(f"[bold cyan]Mapping: {type_name}[/bold cyan]")
+    console.print("")
+
+    # Basic info
+    console.print(f"[bold]Target Table:[/bold] {mapping.get('target_table', 'N/A')}")
+    console.print(f"[bold]Primary Key:[/bold] {', '.join(mapping.get('primary_key', []))}")
+    console.print("")
+
+    # Column mappings
+    column_mappings = mapping.get("column_mappings", {})
+
+    if len(column_mappings) > 0:
+        table = Table(title="Column Mappings")
+        table.add_column("Source", style="cyan")
+        table.add_column("Target", style="green")
+        table.add_column("Type", style="yellow")
+        table.add_column("Required", style="magenta")
+
+        for source, config in column_mappings.items():
+            target = config.get("target", "N/A")
+            col_type = config.get("type", "string")
+            required = config.get("required", False)
+            required_str = "[green]Yes[/green]" if required else "[dim]No[/dim]"
+
+            table.add_row(source, target, col_type, required_str)
+
+        console.print(table)
+    else:
+        console.print("[yellow]No column mappings defined[/yellow]")
+        console.print("[dim]Edit config/mappings.json to add column mappings[/dim]")
+
+
+def _config_remove(project, type_name: str) -> None:
+    """Remove a mapping."""
+    # Confirm removal
+    console.print(f"[yellow]Remove mapping '{type_name}'?[/yellow]")
+    console.print("[dim]This will delete the mapping configuration.[/dim]")
+
+    # For now, just remove it (in a real CLI, you'd ask for confirmation)
+    # Since this is non-interactive, we'll just do it
+    if project.remove_mapping(type_name):
+        console.print("")
+        console.print(f"[bold green]OK[/bold green] Removed mapping '{type_name}'")
+    else:
+        console.print("")
+        console.print(f"[red]Error:[/red] Type '{type_name}' not found")
+        raise Exit(1)
+
+
+def _config_validate(project) -> None:
+    """Validate all mappings."""
+    console.print("[bold cyan]Validating mappings...[/bold cyan]")
+    console.print("")
+
+    errors = project.validate_mappings()
+    mappings = project.mappings
+
+    # Count user mappings (excluding internal)
+    user_mappings = [t for t in mappings.keys() if not t.startswith("_")]
+    total = len(user_mappings)
+
+    if len(errors) == 0:
+        console.print(f"[bold green]✓[/bold green] All {total} mapping(s) are valid")
+    else:
+        console.print(f"[bold red]✗[/bold red] Found {len(errors)} error(s)")
+        console.print("")
+
+        # Create error table
+        table = Table()
+        table.add_column("Type", style="cyan")
+        table.add_column("Error", style="red")
+
+        for error in errors:
+            table.add_row(error["type"], error["error"])
+
+        console.print(table)
 
 
 # ──────────────────────────────────────────────────────────────
