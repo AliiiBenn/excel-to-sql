@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-    { name = "Your Name", email = "your@email.com" }
+    { name = "Ali Bennamane", email = "ali.bennamane@example.com" }
 ]
 keywords = ["excel", "sql", "cli", "etl", "import", "export"]
 classifiers = [
@@ -39,9 +39,9 @@ dev = [
 excel-to-sql = "excel_to_sql.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/excel-to-sql"
-Repository = "https://github.com/yourusername/excel-to-sql"
-Issues = "https://github.com/yourusername/excel-to-sql/issues"
+Homepage = "https://github.com/AliiiBenn/excel-to-sql"
+Repository = "https://github.com/AliiiBenn/excel-to-sql"
+Issues = "https://github.com/AliiiBenn/excel-to-sql/issues"
 
 [build-system]
 requires = ["hatchling"]
