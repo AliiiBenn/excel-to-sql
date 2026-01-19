@@ -234,10 +234,78 @@ def export_cmd(
 @app.command()
 def status() -> None:
     """Show import history."""
-    console.print("[bold cyan]Import Status:[/bold cyan]")
+    try:
+        # Load project
+        project = Project.from_current_directory()
+    except Exception:
+        console.print("[red]Error:[/red] Not an excel-to-sql project")
+        console.print("[dim]Run 'excel-to-sql init' to initialize[/dim]")
+        raise Exit(1)
 
-    # TODO: Phase 4 - Implement status display
-    console.print("[dim]No imports yet[/dim]")
+    # Get import history
+    history = project.database.get_import_history()
+
+    # Handle empty history
+    if len(history) == 0:
+        console.print("[dim]No imports yet[/dim]")
+        console.print("")
+        console.print("[dim]Run 'excel-to-sql import --file <file> --type <type>' to start importing[/dim]")
+        return
+
+    # Create Rich table for display
+    table = Table(title="Import History")
+    table.add_column("Date", style="cyan", no_wrap=False)
+    table.add_column("File", style="green")
+    table.add_column("Type", style="yellow")
+    table.add_column("Rows", style="magenta", justify="right")
+    table.add_column("Status", style="blue")
+
+    # Add rows to table
+    for _, row in history.iterrows():
+        # Format date (remove seconds for cleaner display)
+        date_str = str(row["imported_at"]).split(".")[0]  # Remove microseconds if present
+        if "T" in date_str:
+            date_str = date_str.replace("T", " ")
+
+        # Style status based on value
+        status = str(row["status"])
+        status_style = "green" if status == "success" else "red"
+
+        table.add_row(
+            date_str,
+            str(row["file_name"]),
+            str(row["file_type"]),
+            str(row["rows_imported"]),
+            f"[{status_style}]{status}[/{status_style}]"
+        )
+
+    # Display table
+    console.print("")
+    console.print(table)
+
+    # Display statistics
+    total_imports = len(history)
+    total_rows = history["rows_imported"].sum()
+    total_skipped = history["rows_skipped"].sum()
+
+    # Count successful imports
+    successful = len(history[history["status"] == "success"])
+    success_rate = (successful / total_imports * 100) if total_imports > 0 else 0
+
+    # Get last import date
+    last_import = history.iloc[0]["imported_at"]
+    last_import_str = str(last_import).split(".")[0]
+    if "T" in last_import_str:
+        last_import_str = last_import_str.replace("T", " ")
+
+    # Display statistics
+    console.print("")
+    console.print(f"[bold]Statistics:[/bold]")
+    console.print(f"  Total imports: {total_imports}")
+    console.print(f"  Total rows: {total_rows}")
+    console.print(f"  Total skipped: {total_skipped}")
+    console.print(f"  Success rate: {success_rate:.1f}%")
+    console.print(f"  Last import: {last_import_str}")
 
 
 # ──────────────────────────────────────────────────────────────
