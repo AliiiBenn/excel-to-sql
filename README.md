@@ -96,7 +96,7 @@ This creates the project structure:
 ├── config/                  # Configuration files
 │   └── mappings.json        # Column mappings
 ├── data/                    # Database directory
-│   └── warehouse.db         # SQLite database
+│   └── excel-to-sql.db      # SQLite database
 ├── imports/                 # Excel files to import
 ├── exports/                 # Exported Excel files
 └── logs/                    # Log files
@@ -160,7 +160,7 @@ excel-to-sql init [--db-path PATH]
 ```
 
 **Options:**
-- `--db-path`: Custom database path (default: `data/warehouse.db`)
+- `--db-path`: Custom database path (default: `data/excel-to-sql.db`)
 
 **What it does:**
 - Creates project directory structure

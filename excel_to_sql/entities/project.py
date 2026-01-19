@@ -86,7 +86,7 @@ class Project:
         if self._database is None:
             from excel_to_sql.entities.database import Database
 
-            db_path = self.data_dir / "warehouse.db"
+            db_path = self.data_dir / "excel-to-sql.db"
             self._database = Database(db_path)
         return self._database
 

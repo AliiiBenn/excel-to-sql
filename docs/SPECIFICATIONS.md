@@ -268,7 +268,7 @@ excel-to-sql init [--db-path PATH]
 ```
 
 **Parameters:**
-- `--db-path`: Database path (default: `data/warehouse.db`)
+- `--db-path`: Database path (default: `data/excel-to-sql.db`)
 
 **Behavior:**
 1. Creates directories:

@@ -18,7 +18,7 @@ class Database:
     Represents a database connection and operations.
 
     Usage:
-        db = Database("data/warehouse.db")
+        db = Database("data/excel-to-sql.db")
         db.initialize()
 
         # Query

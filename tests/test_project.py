@@ -46,7 +46,7 @@ class TestProject:
         project.initialize()
 
         assert project.database.exists
-        assert project.database.path == temp_dir / "data" / "warehouse.db"
+        assert project.database.path == temp_dir / "data" / "excel-to-sql.db"
 
     def test_initialize_creates_mappings(self, temp_dir):
         """Test that initialize() creates default mappings."""

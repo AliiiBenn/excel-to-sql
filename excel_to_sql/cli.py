@@ -29,7 +29,7 @@ console = Console()
 
 @app.command()
 def init(
-    db_path: str = Option("data/warehouse.db", "--db-path", help="Path to SQLite database"),
+    db_path: str = Option("data/excel-to-sql.db", "--db-path", help="Path to SQLite database"),
 ) -> None:
     """Initialize project structure and database."""
     console.print("[bold cyan]Initializing excel-to-sql project...[/bold cyan]")

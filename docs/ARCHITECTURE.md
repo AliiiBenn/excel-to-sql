@@ -765,7 +765,7 @@ my-project/
 ├── exports/                # Exported Excel files
 │   └── report.xlsx
 ├── data/                   # Database files
-│   └── warehouse.db
+│   └── excel-to-sql.db
 ├── logs/                   # Application logs
 │   └── app.log
 └── config/                 # Configuration files
