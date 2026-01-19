@@ -378,30 +378,55 @@ excel-to-sql export --output OUTPUT [--table TABLE] [--query QUERY]
 
 **1. Validation**
 - Checks that `--table` or `--query` is provided
-- Error if both missing
-- Error if both provided
+- Error if both missing: "Error: Must specify either --table or --query"
+- Error if both provided: "Error: Cannot specify both --table and --query"
+- Validates output directory exists
 
 **2. Export by table**
 - If `--table`: executes `SELECT * FROM table`
 - Fetches all rows
+- Displays row count
 
 **3. Export by query**
 - If `--query`: executes SQL query
-- Fetches result
+- Validates query starts with SELECT
+- Fetches result set
+- Displays row count
 
 **4. Excel file generation**
-- Creates file with data
+- Creates file with data using pandas + openpyxl
 - Applies formatting:
-  - Bold headers
-  - Auto column width
-  - Formatted dates
-  - Appropriate number formatting
+  - Bold headers with gray background
+  - Auto column width based on content
+  - Formatted dates (YYYY-MM-DD)
+  - Appropriate number formatting (2 decimal places for floats)
+  - Freeze header row
 
 **5. History recording**
-- Adds entry in `_export_history`
-- Records: table/query, row count, date
+- Adds entry in `_export_history` table
+- Records: table name, query, output path, row count, timestamp
 
-**Current status:** ⏳ To be implemented
+**6. Summary display**
+- Rich table with export details
+- Shows: source, output file, rows exported, file size
+- Success message in green
+
+**Error handling:**
+- Table doesn't exist: "Error: Table 'xyz' not found"
+- Invalid SQL: "Error: Invalid SQL query"
+- Permission denied: "Error: Cannot write to output file"
+- Empty result: Warning "Warning: No data to export"
+
+**Return codes:**
+- 0: Success
+- 1: Error (validation failed, table not found, etc.)
+
+**Current status:** ❌ Placeholder only
+
+**Required Database methods:**
+- `Database.export_table(table_name: str) -> pd.DataFrame`
+- `Database.execute_query(query: str) -> pd.DataFrame`
+- `Database.record_export(table, query, output_path, row_count)`
 
 ---
 
@@ -419,24 +444,56 @@ None
 
 **1. History retrieval**
 - Reads `_import_history` table
-- Sorts by date descending
+- Sorts by date descending (newest first)
+- Limits to last 50 entries (configurable)
 
 **2. Display**
-- Table with columns:
-  - Import date
-  - Filename
-  - Type
-  - Target table
-  - Row count
-  - Status
-  - Content hash
+- Rich table with title "Import History"
+- Columns:
+  - Date (cyan style, formatted: YYYY-MM-DD HH:MM:SS)
+  - Filename (green style)
+  - Type (yellow style)
+  - Target Table (blue style)
+  - Rows (magenta style, right-aligned)
+  - Status (style based on status: success=green, failed=red)
+  - Hash (dim style, first 12 characters only)
 
 **3. Global statistics**
-- Total import count
-- Total imported rows
-- Last import
+- Total import count (below table)
+- Total imported rows (below table)
+- Last import date and time (below table)
+- Success rate percentage (below table)
 
-**Current status:** ⏳ To be implemented (placeholder only)
+**4. Empty state**
+- If no imports: display "No imports yet" in dim text
+- Suggest running `excel-to-sql import --help`
+
+**Output example:**
+```
+╭─────────────────────────────────────────────────────────────────╮
+│                        Import History                           │
+├────────────┬────────────┬──────┬──────────────┬──────┬──────────┤
+│ Date       │ File       │ Type │ Table        │ Rows │ Status   │
+├────────────┼────────────┼──────┼──────────────┼──────┼──────────┤
+│ 2026-01-19 │ data.xlsx  │ prod │ products     │ 150  │ success  │
+│ 2026-01-18 │ orders.xlsx│ ord  │ orders       │  75  │ success  │
+╰────────────┴────────────┴──────┴──────────────┴──────┴──────────╯
+
+Total imports: 2 | Total rows: 225 | Last: 2026-01-19 14:30:00 | Success rate: 100%
+```
+
+**Error handling:**
+- Project not initialized: "Error: Not an excel-to-sql project"
+- History table doesn't exist: "Error: Import history not found"
+
+**Return codes:**
+- 0: Success
+- 1: Error (project not found, database error, etc.)
+
+**Current status:** ❌ Placeholder only (hardcoded "No imports yet")
+
+**Required Database methods:**
+- `Database.get_import_history(limit: int = 50) -> pd.DataFrame`
 
 ---
 
@@ -444,38 +501,181 @@ None
 
 **Signature:**
 ```bash
-excel-to-sql config [--add-type TYPE --table TABLE --pk PK] [--list] [--remove TYPE]
-```
+excel-to-sql config [OPTIONS]
 
-**Parameters:**
-- `--add-type`: New type name
-- `--table`: Target table
-- `--pk`: Primary key (comma-separated for composite key)
-- `--list`: List existing mappings
-- `--remove`: Remove mapping
+Options:
+  --add-type TYPE     Add new mapping type
+  --table TABLE       Target table name (required with --add-type)
+  --pk PK             Primary key column(s), comma-separated for composite (required with --add-type)
+  --file FILE         Excel file to auto-detect columns (optional with --add-type)
+  --list              List all configured mappings
+  --show TYPE         Show details for a specific mapping type
+  --remove TYPE       Remove a mapping type
+  --validate          Validate all mappings
+```
 
 **Expected behavior:**
 
-**Add type:**
-1. Validates type doesn't exist
-2. Creates new mapping with auto-detected columns
-3. Adds to `mappings.json`
-4. Displays created mapping
+#### Subcommand: --add-type (Create new mapping)
 
-**List types:**
+**Parameters:**
+- `--add-type`: New type name (required)
+- `--table`: Target table name (required)
+- `--pk`: Primary key column(s) (required, comma-separated for composite keys)
+- `--file`: Excel file path (optional, for auto-detecting columns)
+
+**Workflow:**
+1. Validates type doesn't already exist (error if duplicate)
+2. Validates table name is valid SQL identifier
+3. Validates primary key column(s) are provided
+4. If `--file` provided:
+   - Reads Excel file
+   - Auto-detects columns from first row
+   - Infers types from data (string, integer, float, boolean, date)
+   - Creates mapping with detected columns
+5. If no `--file`:
+   - Creates empty mapping with just table and PK
+   - User must edit `mappings.json` manually to add columns
+6. Adds to `mappings.json`
+7. Displays created mapping in table format
+
+**Output example:**
+```
+Created mapping for type 'products':
+  Table: products
+  Primary Key: id
+  Columns:
+    - ID → id (integer)
+    - Name → name (string)
+    - Price → price (float)
+```
+
+**Error handling:**
+- Type already exists: "Error: Type 'products' already exists"
+- Invalid table name: "Error: Invalid table name"
+- Missing primary key: "Error: Primary key is required"
+- File not found: "Error: Excel file not found"
+
+---
+
+#### Subcommand: --list (List all mappings)
+
+**Parameters:**
+- `--list`: Flag to list all mappings
+
+**Workflow:**
 1. Reads `mappings.json`
-2. Displays table with:
-   - Type
-   - Target table
-   - Primary key
-   - Columns
+2. Displays Rich table with all mappings
+3. Columns: Type, Table, Primary Key, Column Count, Created Date (if tracked)
 
-**Remove type:**
+**Output example:**
+```
+╭──────────┬──────────────┬────────────┬──────────────╮
+│ Type     │ Table        │ Primary Key│ Columns      │
+├──────────┼──────────────┼────────────┼──────────────┤
+│ products │ products     │ id         │ 3 columns    │
+│ orders   │ orders       │ order_id   │ 5 columns    │
+│ customers│ customers    │ id         │ 8 columns    │
+╰──────────┴──────────────┴────────────┴──────────────╯
+```
+
+**Error handling:**
+- No mappings found: "No mappings configured"
+- Invalid JSON: "Error: Corrupted mapping file"
+
+---
+
+#### Subcommand: --show TYPE (Display specific mapping)
+
+**Parameters:**
+- `--show TYPE`: Type name to display
+
+**Workflow:**
 1. Validates type exists
-2. Deletes from `mappings.json`
-3. Confirms deletion
+2. Reads mapping from `mappings.json`
+3. Displays detailed information in formatted table
+4. Shows: target table, primary key, all column mappings
 
-**Current status:** ⏳ To be implemented (placeholder only)
+**Output example:**
+```
+Mapping: products
+─────────────────────────────────────────
+Target Table: products
+Primary Key: id
+
+Column Mappings:
+┌─────────────┬──────────────┬──────────┬──────────┐
+│ Source      │ Target       │ Type     │ Required │
+├─────────────┼──────────────┼──────────┼──────────┤
+│ ID          │ id           │ integer  │ Yes      │
+│ Name        │ name         │ string   │ No       │
+│ Price       │ price        │ float    │ No       │
+│ Created At  │ created_at   │ date     │ No       │
+└─────────────┴──────────────┴──────────┴──────────┘
+```
+
+**Error handling:**
+- Type not found: "Error: Type 'xyz' not found"
+
+---
+
+#### Subcommand: --remove TYPE (Delete mapping)
+
+**Parameters:**
+- `--remove TYPE`: Type name to remove
+
+**Workflow:**
+1. Validates type exists
+2. Asks for confirmation: "Are you sure you want to delete type 'xyz'? (y/N)"
+3. If confirmed:
+   - Removes from `mappings.json`
+   - Displays success message
+4. If not confirmed:
+   - Displays "Cancelled"
+
+**Error handling:**
+- Type not found: "Error: Type 'xyz' not found"
+
+---
+
+#### Subcommand: --validate (Validate all mappings)
+
+**Parameters:**
+- `--validate`: Flag to validate mappings
+
+**Workflow:**
+1. Reads `mappings.json`
+2. Validates each mapping:
+   - Required fields present (target_table, primary_key, column_mappings)
+   - Primary key columns exist in column_mappings
+   - Column types are valid
+   - No duplicate source columns
+   - No duplicate target columns
+3. Displays results:
+   - Total mappings checked
+   - Valid mappings count
+   - Invalid mappings with errors
+
+**Output example:**
+```
+Validating 3 mappings...
+✅ products: Valid
+✅ orders: Valid
+❌ customers: Error - Primary key 'customer_id' not found in column mappings
+
+2/3 mappings valid
+```
+
+**Return codes:**
+- 0: Success (or --validate with no errors)
+- 1: Error (validation failed, file not found, etc.)
+
+**Current status:** ❌ Placeholder only (only signature defined)
+
+**Required Project methods:**
+- `Project.remove_mapping(type_name: str)`
+- `Project.validate_mappings() -> List[ValidationError]`
+- `Project.auto_detect_columns(file_path: str) -> Dict`
 
 ---
 
@@ -680,25 +880,43 @@ CREATE TABLE _export_history (
 
 ## 8. Development Priorities
 
-### 8.1 High Priority (MVP)
+### 8.1 Critical Priority (Bug Fix)
 
-1. ✅ Project initialization
-2. ✅ Excel file import
-3. ✅ Mapping configuration
-4. ✅ Import history
+1. ⚠️ **Fix composite primary key UPSERT bug**
+   - Location: `entities/table.py`
+   - Test: `tests/test_import.py:327`
+   - Impact: Core functionality broken
 
-### 8.2 Medium Priority
+### 8.2 High Priority (MVP Completion)
 
-5. ❌ Excel export
-6. ❌ Status display
-7. ❌ Configuration management via CLI
+2. ❌ **Implement `status` command**
+   - Effort: ~3 hours
+   - Why: Quick win, provides visibility into imports
+   - Status: Placeholder only
 
-### 8.3 Low Priority (post-MVP)
+3. ❌ **Implement `export` command**
+   - Effort: ~8 hours
+   - Why: Essential for bidirectional workflow
+   - Status: Placeholder only
 
-8. ⏸️ Pre-import data validation
-9. ⏸️ Custom transformations
-10. ⏸️ Multiple Excel sheet support
-11. ⏸️ Other database support
+4. ❌ **Implement `config` command**
+   - Effort: ~6 hours
+   - Scope: --add-type, --list, --show, --remove, --validate
+   - Status: Partially implemented (signature only)
+
+### 8.3 Medium Priority (Enhancements)
+
+5. ⏸️ **Export formatting** - Enhanced Excel formatting
+6. ⏸️ **Progress bars** - Visual feedback during operations
+7. ⏸️ **Validation framework** - Pre-import data validation
+8. ⏸️ **Data transformations** - Custom column transformations
+9. ⏸️ **Multiple sheet support** - Import/export multiple sheets
+
+### 8.4 Low Priority (Post-MVP)
+
+10. ⏸️ **Other database support** - PostgreSQL, MySQL
+11. ⏸️ **Performance optimization** - Chunked processing, batch operations
+12. ⏸️ **Advanced query features** - Saved queries, templates
 
 ---
 
@@ -710,6 +928,7 @@ CREATE TABLE _export_history (
 - ✅ Tests pass
 - ✅ Documentation complete
 - ✅ Error messages clear
+- ✅ Known bugs fixed
 
 ### 9.2 Command-Specific Criteria
 
@@ -723,20 +942,29 @@ CREATE TABLE _export_history (
 - ✅ Detects file changes
 - ✅ Performs UPSERT correctly
 - ✅ Records history
+- ⚠️ Composite primary key UPSERT (bug to fix)
 
-**`export` (to do):**
-- ❌ Exports complete table
-- ❌ Exports custom query
-- ❌ Applies Excel formatting
+**`export` (to implement):**
+- ❌ Exports complete table to Excel
+- ❌ Exports custom SQL query to Excel
+- ❌ Applies Excel formatting (headers, column widths)
+- ❌ Records export history
+- ❌ Displays export summary
+- ❌ Handles errors (table not found, invalid SQL)
 
-**`status` (to do):**
-- ❌ Displays complete history
-- ❌ Displays statistics
+**`status` (to implement):**
+- ❌ Displays complete import history
+- ❌ Shows statistics (total imports, rows, success rate)
+- ❌ Handles empty history gracefully
+- ❌ Rich table formatting
 
-**`config` (to do):**
-- ❌ Adds new mapping
-- ❌ Lists mappings
-- ❌ Removes mapping
+**`config` (to implement):**
+- ❌ Adds new mapping with auto-detection
+- ❌ Lists all mappings
+- ❌ Shows specific mapping details
+- ❌ Removes mapping with confirmation
+- ❌ Validates all mappings
+- ❌ Handles errors (duplicate type, not found, invalid JSON)
 
 ---
 
@@ -744,15 +972,25 @@ CREATE TABLE _export_history (
 
 This document defines the complete functional specifications for the Excel to SQLite project. The MVP covers essential import/export functionality between Excel and SQLite, with flexible mapping management and history tracking.
 
-**Current status:**
-- Import: ✅ Complete
-- Export: ⏳ To do
-- Status: ⏳ To do
-- Config: ⏳ To do
+**Current Implementation Status:**
+- ✅ `init` command: Complete
+- ✅ `import` command: Complete (with composite key bug)
+- ❌ `export` command: Not implemented (placeholder only)
+- ❌ `status` command: Not implemented (placeholder only)
+- ❌ `config` command: Not implemented (signature only)
 
-**Next steps:**
-1. Implement `export` command
-2. Implement `status` command
-3. Implement `config` command
-4. Fix composite primary key bug
-5. Improve documentation
+**Known Issues:**
+- ⚠️ Composite primary key UPSERT has a bug (test skipped in `tests/test_import.py:327`)
+
+**Next Steps (Priority Order):**
+1. **Fix composite primary key bug** - Critical for MVP completion
+2. **Implement `status` command** - Quick win, provides visibility
+3. **Implement `export` command** - Core feature for bidirectional workflow
+4. **Implement `config` command** - Essential for user productivity
+5. **Improve documentation** - README, user guide, examples
+6. **Add tests** - Integration tests for new features
+
+**MVP Completion Estimate:**
+- Remaining work: ~21 hours (4 hours bug fix + 17 hours implementation)
+- Target date: End of January 2026
+- Version: v0.1.0-alpha → v0.1.0

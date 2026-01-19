@@ -744,7 +744,7 @@ def temp_project():
 
 **1. Development Installation**
 ```bash
-git clone <repository>
+git clone https://github.com/davidfrancoeur/excel-to-sql
 cd excel-to-sql
 pip install -e .
 ```
@@ -816,9 +816,174 @@ my-project/
 
 ---
 
-## 11. Future Enhancements
+## 11. Missing Features (To Implement)
 
-### 11.1 Scalability
+### 11.1 Export Command
+
+**Status:** Placeholder only (`cli.py:211-226`)
+
+**Required Implementation:**
+
+```python
+@app.command("export")
+def export_cmd(
+    output: str = Option(..., "--output", "-o"),
+    table: str = Option(None, "--table"),
+    query: str = Option(None, "--query"),
+) -> None:
+    """Export data from database to Excel."""
+    # Validation
+    if not table and not query:
+        console.print("[red]Error:[/red] Must specify --table or --query")
+        raise Exit(1)
+    if table and query:
+        console.print("[red]Error:[/red] Cannot specify both --table and --query")
+        raise Exit(1)
+
+    # Load project
+    project = Project.from_current_directory()
+
+    # Execute export
+    if table:
+        df = project.database.export_table(table)
+    else:
+        df = project.database.execute_query(query)
+
+    # Write to Excel with formatting
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False)
+        worksheet = writer.sheets['Sheet1']
+        # Apply formatting (headers, column widths, etc.)
+
+    # Record history
+    project.database.record_export(table, query, output, len(df))
+
+    # Display summary
+    console.print(f"[green]OK[/green] Exported {len(df)} rows to {output}")
+```
+
+**Required Database Methods:**
+- `Database.export_table(table_name: str) -> pd.DataFrame`
+- `Database.record_export(table, query, output_path, row_count)`
+
+---
+
+### 11.2 Status Command
+
+**Status:** Placeholder only (`cli.py:234-240`)
+
+**Required Implementation:**
+
+```python
+@app.command()
+def status() -> None:
+    """Show import history."""
+    project = Project.from_current_directory()
+    history = project.database.get_import_history()
+
+    if len(history) == 0:
+        console.print("[dim]No imports yet[/dim]")
+        return
+
+    # Display table with Rich
+    table = Table(title="Import History")
+    table.add_column("Date", style="cyan")
+    table.add_column("File", style="green")
+    table.add_column("Type", style="yellow")
+    table.add_column("Rows", style="magenta")
+    table.add_column("Status", style="blue")
+
+    for _, row in history.iterrows():
+        table.add_row(
+            row['imported_at'],
+            row['file_name'],
+            row['file_type'],
+            str(row['rows_imported']),
+            row['status']
+        )
+
+    console.print(table)
+
+    # Statistics
+    console.print(f"\nTotal imports: {len(history)}")
+    console.print(f"Total rows: {history['rows_imported'].sum()}")
+```
+
+**Required Database Methods:**
+- `Database.get_import_history() -> pd.DataFrame`
+
+---
+
+### 11.3 Config Command
+
+**Status:** Partially implemented (`cli.py:248-259`)
+
+**Required Subcommands:**
+
+**1. Add Type (--add-type)**
+```python
+@app.command("config")
+def config_cmd(
+    add_type: Optional[str] = Option(None, "--add-type", help="New type name"),
+    table: Optional[str] = Option(None, "--table", help="Target table name"),
+    pk: Optional[str] = Option(None, "--pk", help="Primary key (comma-separated for composite)"),
+    list: bool = Option(False, "--list", help="List all mappings"),
+    show: Optional[str] = Option(None, "--show", help="Show specific mapping"),
+    remove: Optional[str] = Option(None, "--remove", help="Remove mapping"),
+) -> None:
+    """Manage configuration mappings."""
+    project = Project.from_current_directory()
+
+    if add_type:
+        # Add new mapping with auto-detected columns
+        # TODO: Implement
+        pass
+    elif list:
+        # List all mappings
+        # TODO: Implement
+        pass
+    elif show:
+        # Show specific mapping
+        # TODO: Implement
+        pass
+    elif remove:
+        # Remove mapping
+        # TODO: Implement
+        pass
+```
+
+**Required Features:**
+- Auto-detect columns from Excel file
+- Validate mapping syntax
+- Interactive mapping creation (optional)
+
+---
+
+### 11.4 Bug: Composite Primary Key
+
+**Location:** `entities/table.py`
+
+**Issue:** UPSERT query generation doesn't properly handle composite primary keys
+
+**Test:** `tests/test_import.py:327` (skipped)
+
+**Current Problem:**
+```python
+# Current implementation generates:
+INSERT INTO table (col1, col2, col3) VALUES (?, ?, ?)
+ON CONFLICT(col1, col2) DO UPDATE SET col3 = excluded.col3  # May not work correctly
+```
+
+**Required Fix:**
+- Properly format composite key in ON CONFLICT clause
+- Test with 2+ column primary keys
+- Ensure all existing tests still pass
+
+---
+
+## 12. Future Enhancements
+
+### 12.1 Scalability
 
 **Current limitations:**
 - Single-file processing
@@ -830,7 +995,7 @@ my-project/
 - Streaming for very large datasets
 - PostgreSQL/MySQL support
 
-### 11.2 Performance
+### 12.2 Performance
 
 **Optimizations:**
 - Batch UPSERT operations
@@ -838,7 +1003,7 @@ my-project/
 - Query caching
 - Connection pooling tuning
 
-### 11.3 Features
+### 12.3 Features
 
 **Planned:**
 - Export command implementation
@@ -851,7 +1016,7 @@ my-project/
 
 ---
 
-## 12. Conclusion
+## 13. Conclusion
 
 The Excel to SQLite project follows a **clean, layered architecture** with:
 

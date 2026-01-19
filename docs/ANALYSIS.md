@@ -1,75 +1,75 @@
-# Analyse de l'existant - Excel to SQLite
+# Codebase Analysis - Excel to SQLite
 
-**Date :** 19 janvier 2026
-**Version du projet :** 0.1.0-alpha
-**Statut :** Phase de développement actif
-
----
-
-## 1. Vue d'ensemble du projet
-
-### 1.1 Objectif principal
-
-Excel to SQLite est un outil en ligne de commande (CLI) qui permet de :
-- Importer des fichiers Excel vers une base de données SQLite
-- Exporter des données SQL vers Excel (non implémenté)
-- Gérer des mappings de colonnes configurables
-- Suivre l'historique des imports
-
-### 1.2 Technologie
-
-**Stack technique :**
-- **Langage :** Python 3.10+
-- **CLI Framework :** Typer
-- **Validation :** Pydantic v2
-- **Manipulation de données :** Pandas
-- **Excel :** openpyxl
-- **Base de données :** SQLAlchemy 2.0 avec SQLite
-- **Interface console :** Rich
+**Date:** January 19, 2026
+**Project Version:** 0.1.0-alpha
+**Status:** Active Development Phase
 
 ---
 
-## 2. Analyse de la structure du code
+## 1. Project Overview
 
-### 2.1 Organisation des répertoires
+### 1.1 Main Objective
+
+Excel to SQLite is a command-line interface (CLI) tool that enables:
+- Importing Excel files into SQLite database
+- Exporting SQL data to Excel (not implemented)
+- Configurable column mapping management
+- Import history tracking
+
+### 1.2 Technology Stack
+
+**Tech Stack:**
+- **Language:** Python 3.10+
+- **CLI Framework:** Typer
+- **Validation:** Pydantic v2
+- **Data Manipulation:** Pandas
+- **Excel:** openpyxl
+- **Database:** SQLAlchemy 2.0 with SQLite
+- **Console Interface:** Rich
+
+---
+
+## 2. Code Structure Analysis
+
+### 2.1 Directory Organization
 
 ```
 excel-to-sqlite/
-├── excel_to_sql/               # Package principal
+├── excel_to_sql/               # Main package
 │   ├── __init__.py
 │   ├── __main__.py            # Entry point
-│   ├── cli.py                 # Interface CLI (268 lignes)
-│   ├── entities/              # Entités métier
-│   │   ├── project.py         # Gestion de projet
-│   │   ├── database.py        # Opérations DB
-│   │   ├── excel_file.py      # Fichiers Excel
-│   │   ├── dataframe.py       # Traitement de données
-│   │   └── table.py           # Opérations de table
-│   ├── models/                # Modèles Pydantic
-│   │   └── mapping.py         # Mapping de configuration
-│   └── config/                # Configuration (vide)
-├── tests/                     # Suite de tests complète
+│   ├── cli.py                 # CLI interface (268 lines)
+│   ├── entities/              # Business entities
+│   │   ├── project.py         # Project management
+│   │   ├── database.py        # Database operations
+│   │   ├── excel_file.py      # Excel files
+│   │   ├── dataframe.py       # Data processing
+│   │   └── table.py           # Table operations
+│   ├── models/                # Pydantic models
+│   │   └── mapping.py         # Mapping configuration
+│   └── config/                # Configuration (empty)
+├── tests/                     # Complete test suite
 │   ├── test_database.py
 │   ├── test_dataframe.py
 │   ├── test_excel_file.py
-│   ├── test_import.py         # Tests d'intégration
+│   ├── test_import.py         # Integration tests
 │   ├── test_project.py
 │   ├── test_table.py
-│   └── fixtures/              # Données de test
-├── docs/                      # Documentation (à créer)
-├── pyproject.toml             # Configuration du projet
-└── README.md                  # Documentation basique
+│   └── fixtures/              # Test data
+├── docs/                      # Documentation
+├── pyproject.toml             # Project configuration
+└── README.md                  # Basic documentation
 ```
 
-### 2.2 Architecture en couches
+### 2.2 Layered Architecture
 
-Le projet suit une **architecture orientée entité** avec 5 entités principales :
+The project follows an **entity-oriented architecture** with 5 main entities:
 
 ```
 ┌─────────────────────────────────────┐
-│            CLI (Typer)              │  ← Interface utilisateur
+│            CLI (Typer)              │  ← User interface
 ├─────────────────────────────────────┤
-│         Entities ( métier )         │  ← Logique métier
+│         Entities (Business)         │  ← Business logic
 │  ┌─────────┐ ┌─────────┐           │
 │  │ Project │ │ Database│           │
 │  └─────────┘ └─────────┘           │
@@ -83,216 +83,242 @@ Le projet suit une **architecture orientée entité** avec 5 entités principale
 │        Models (Pydantic)            │  ← Validation
 │  ┌─────────┐ ┌─────────┐           │
 │  │Mappings │ │ Column  │           │
-│  │         │ │Mapping  │           │
+│  │         │ │ Mapping  │           │
 │  └─────────┘ └─────────┘           │
 └─────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Fonctionnalités implémentées
+## 3. Implemented Features
 
-### 3.1 Commande `init` ✅
+### 3.1 `init` Command ✅
 
-**Statut :** Implémentée et fonctionnelle
+**Status:** Implemented and functional
 
-**Fonctionnalité :**
-- Initialise la structure du projet
-- Crée les répertoires : `imports/`, `exports/`, `data/`, `logs/`, `config/`
-- Initialise la base de données SQLite
-- Crée un fichier de mapping par défaut
+**Functionality:**
+- Initializes project structure
+- Creates directories: `imports/`, `exports/`, `data/`, `logs/`, `config/`
+- Initializes SQLite database
+- Creates default mapping file
 
-**Usage :**
+**Usage:**
 ```bash
 excel-to-sql init [--db-path PATH]
 ```
 
-**Code :** `cli.py:29-44`
+**Code:** `cli.py:29-44`
 
 ---
 
-### 3.2 Commande `import` ✅
+### 3.2 `import` Command ✅
 
-**Statut :** Implémentée et testée
+**Status:** Implemented and tested
 
-**Fonctionnalité :**
-- Importe un fichier Excel dans la base de données
-- Détecte les changements par hash de contenu
-- Nettoie les données (lignes vides, espaces)
-- Applique les mappings de colonnes
-- Effectue des opérations UPSERT (insert/update)
-- Enregistre l'historique des imports
+**Functionality:**
+- Imports Excel file into database
+- Detects changes via content hash
+- Cleans data (empty rows, spaces)
+- Applies column mappings
+- Performs UPSERT operations (insert/update)
+- Records import history
 
-**Workflow complet :**
-1. Validation du fichier (existence, extension)
-2. Chargement du projet
-3. Validation du type de mapping
-4. Lecture du fichier Excel
-5. Calcul du hash de contenu
-6. Vérification si déjà importé
-7. Chargement des données
-8. Nettoyage des données
-9. Application des mappings
-10. Import en base (UPSERT)
-11. Enregistrement en historique
-12. Affichage du résumé
+**Complete Workflow:**
+1. File validation (existence, extension)
+2. Project loading
+3. Mapping type validation
+4. Excel file reading
+5. Content hash calculation
+6. Check if already imported
+7. Data loading
+8. Data cleaning
+9. Mapping application
+10. Database import (UPSERT)
+11. History recording
+12. Summary display
 
-**Usage :**
+**Usage:**
 ```bash
 excel-to-sql import --file FILE --type TYPE [--force]
 ```
 
-**Code :** `cli.py:51-203`
+**Code:** `cli.py:51-203`
 
-**Tests :** `tests/test_import.py` - 14 tests d'intégration
+**Tests:** `tests/test_import.py` - 14 integration tests
 
 ---
 
-### 3.3 Commande `export` ⏳
+### 3.3 `export` Command ❌
 
-**Statut :** Placeholder (TODO)
+**Status:** Placeholder only
 
-**Fonctionnalité prévue :**
-- Exporte des données de la base vers Excel
-- Soit une table complète, soit une requête SQL personnalisée
+**Required Functionality:**
+- Export database data to Excel
+- Either complete table or custom SQL query
 
-**Signature actuelle :**
+**Current Signature:**
 ```bash
 excel-to-sql export --output OUTPUT [--table TABLE] [--query QUERY]
 ```
 
-**Code :** `cli.py:211-226`
+**Code:** `cli.py:211-226`
+
+**What's Missing:**
+- Actual export logic
+- Excel formatting (headers, column widths)
+- Export history tracking
+- Integration tests
 
 ---
 
-### 3.4 Commande `status` ⏳
+### 3.4 `status` Command ❌
 
-**Statut :** Placeholder (TODO)
+**Status:** Placeholder only
 
-**Fonctionnalité prévue :**
-- Affiche l'historique des imports
-- Montre les statistiques d'import
+**Required Functionality:**
+- Display import history
+- Show import statistics
 
-**Signature actuelle :**
+**Current Signature:**
 ```bash
 excel-to-sql status
 ```
 
-**Code :** `cli.py:234-240`
+**Code:** `cli.py:234-240`
+
+**What's Missing:**
+- Query `_import_history` table
+- Display results in Rich table format
+- Show statistics (total imports, total rows)
 
 ---
 
-### 3.5 Commande `config` ⏳
+### 3.5 `config` Command ❌
 
-**Statut :** Partiellement implémentée (TODO)
+**Status:** Partially implemented (placeholder)
 
-**Fonctionnalité prévue :**
-- Gère les configurations de mapping
-- Ajoute de nouveaux types
+**Required Functionality:**
+- Manage mapping configurations
+- Add new types
+- List existing mappings
+- Remove mappings
+- Validate mappings
 
-**Signature actuelle :**
+**Current Signature:**
 ```bash
 excel-to-sql config --add-type TYPE --table TABLE
 ```
 
-**Code :** `cli.py:248-259`
+**Code:** `cli.py:248-259`
+
+**What's Missing:**
+- `--add-type` implementation with auto-detection
+- `--list` to show all mappings
+- `--show <type>` to display specific mapping
+- `--remove <type>` to delete mapping
+- `--validate` to check mapping syntax
 
 ---
 
-## 4. Entités métier
+## 4. Business Entities
 
-### 4.1 Project ✅
+### 4.1 Project Entity ✅
 
-**Responsabilités :**
-- Gérer la structure du projet
-- Créer et initialiser les répertoires
-- Charger et sauvegarder les mappings
-- Fournir l'accès à la base de données
+**Responsibilities:**
+- Manage project structure
+- Create and initialize directories
+- Load and save mappings
+- Provide database access
 
-**Méthodes clés :**
-- `initialize()` - Initialisation du projet
-- `add_mapping()` - Ajouter un mapping
-- `get_mapping()` - Récupérer un mapping
-- `list_types()` - Lister les types configurés
+**Key Methods:**
+- `initialize()` - Project initialization
+- `add_mapping()` - Add a mapping
+- `get_mapping()` - Retrieve a mapping
+- `list_types()` - List configured types
 
-**Code :** `entities/project.py` (229 lignes)
-
----
-
-### 4.2 Database ✅
-
-**Responsabilités :**
-- Gérer la connexion SQLite
-- Créer les tables
-- Exécuter des requêtes
-- Gérer l'historique des imports
-
-**Fonctionnalités :**
-- Connexion SQLAlchemy
-- Table `_import_history` pour le suivi
-- Méthode `get_table()` pour accéder aux tables
-- Méthodes `query()`, `execute()`
-
-**Code :** `entities/database.py`
+**Code:** `entities/project.py` (229 lines)
 
 ---
 
-### 4.3 ExcelFile ✅
+### 4.2 Database Entity ✅
 
-**Responsabilités :**
-- Lire des fichiers Excel
-- Calculer le hash de contenu
-- Valider les fichiers
+**Responsibilities:**
+- Manage SQLite connection
+- Create tables
+- Execute queries
+- Manage import history
 
-**Fonctionnalités :**
-- Lecture avec pandas
-- Hash SHA256 pour détecter les changements
-- Validation du format
+**Features:**
+- SQLAlchemy connection
+- `_import_history` table for tracking
+- `get_table()` method to access tables
+- `query()`, `execute()` methods
 
-**Code :** `entities/excel_file.py`
+**Code:** `entities/database.py`
 
----
-
-### 4.4 DataFrame ✅
-
-**Responsabilités :**
-- Nettoyer les données
-- Appliquer les mappings
-- Convertir les types
-
-**Fonctionnalités :**
-- Suppression des lignes vides
-- Nettoyage des espaces
-- Conversion de types (string, integer, float, boolean, date)
-- Application des mappings de colonnes
-
-**Code :** `entities/dataframe.py`
+**Missing Methods:**
+- `export_table()` - Export table to DataFrame
+- `record_export()` - Add export history entry
+- Proper `get_import_history()` implementation
 
 ---
 
-### 4.5 Table ✅
+### 4.3 ExcelFile Entity ✅
 
-**Responsabilités :**
-- Représenter une table SQL
-- Effectuer des opérations UPSERT
-- Gérer le schéma
+**Responsibilities:**
+- Read Excel files
+- Calculate content hash
+- Validate files
 
-**Fonctionnalités :**
-- Création automatique de table
-- UPSERT avec clé primaire (composite supporté)
-- Méthodes `select_all()`, `row_count`
+**Features:**
+- Reading with pandas
+- SHA256 hash for change detection
+- Format validation
 
-**Code :** `entities/table.py`
-
-**⚠️ Note :** Il y a un problème connu avec les clés primaires composites (voir `test_import.py:327`)
+**Code:** `entities/excel_file.py`
 
 ---
 
-## 5. Configuration et Mapping
+### 4.4 DataFrame Entity ✅
 
-### 5.1 Structure des mappings
+**Responsibilities:**
+- Clean data
+- Apply mappings
+- Convert types
 
-Les mappings sont stockés dans `config/mappings.json` :
+**Features:**
+- Remove empty rows
+- Strip whitespace
+- Type conversion (string, integer, float, boolean, date)
+- Apply column mappings
+
+**Code:** `entities/dataframe.py`
+
+---
+
+### 4.5 Table Entity ✅
+
+**Responsibilities:**
+- Represent SQL table
+- Perform UPSERT operations
+- Manage schema
+
+**Features:**
+- Automatic table creation
+- UPSERT with primary key (composite partially supported)
+- `select_all()`, `row_count` methods
+
+**Code:** `entities/table.py`
+
+**⚠️ Known Issue:** Composite primary key UPSERT has a bug (see `test_import.py:327`)
+
+---
+
+## 5. Configuration and Mapping
+
+### 5.1 Mapping Structure
+
+Mappings are stored in `config/mappings.json`:
 
 ```json
 {
@@ -315,173 +341,178 @@ Les mappings sont stockés dans `config/mappings.json` :
 }
 ```
 
-### 5.2 Types de colonnes supportés
+### 5.2 Supported Column Types
 
-- `string` - Texte
-- `integer` - Entier
-- `float` - Nombre décimal
-- `boolean` - Booléen
+- `string` - Text
+- `integer` - Integer
+- `float` - Decimal number
+- `boolean` - Boolean
 - `date` - Date
 
-### 5.3 Modèles Pydantic
+### 5.3 Pydantic Models
 
-**ColumnMapping :**
-- `target`: nom de la colonne cible
-- `type`: type SQL
-- `required`: si null doit être rejeté
-- `default`: valeur par défaut
+**ColumnMapping:**
+- `target`: target column name
+- `type`: SQL type
+- `required`: reject nulls
+- `default`: default value
 
-**TypeMapping :**
-- `target_table`: table de destination
-- `primary_key`: colonnes de la clé primaire
-- `column_mappings`: mapping des colonnes
+**TypeMapping:**
+- `target_table`: destination table
+- `primary_key`: primary key columns
+- `column_mappings`: column mapping
 
-**Code :** `models/mapping.py` (59 lignes)
+**Code:** `models/mapping.py` (59 lines)
 
 ---
 
 ## 6. Tests
 
-### 6.1 Couverture de tests
+### 6.1 Test Coverage
 
-**Tests unitaires :**
-- `test_database.py` - Tests de l'entité Database
-- `test_dataframe.py` - Tests de l'entité DataFrame
-- `test_excel_file.py` - Tests de l'entité ExcelFile
-- `test_project.py` - Tests de l'entité Project
-- `test_table.py` - Tests de l'entité Table
+**Unit Tests:**
+- `test_database.py` - Database entity tests
+- `test_dataframe.py` - DataFrame entity tests
+- `test_excel_file.py` - ExcelFile entity tests
+- `test_project.py` - Project entity tests
+- `test_table.py` - Table entity tests
 
-**Tests d'intégration :**
-- `test_import.py` - 14 tests du workflow complet d'import
+**Integration Tests:**
+- `test_import.py` - 14 import workflow tests
 
-### 6.2 Scénarios testés
+### 6.2 Tested Scenarios
 
-1. Import d'un nouveau fichier ✅
-2. Import idempotent (même fichier) ✅
-3. Import avec --force ✅
-4. Mise à jour de lignes existantes ✅
-5. Gestion des erreurs (fichier manquant, type inconnu) ✅
-6. Gestion des lignes vides ✅
-7. Gestion des valeurs null ✅
-8. Coercition de types invalides ✅
-9. Historique des imports ✅
-10. Affichage du tableau récapitulatif ✅
-11. Clé primaire composite ⚠️ (connu comme buggy)
+1. New file import ✅
+2. Idempotent import (same file) ✅
+3. Import with --force ✅
+4. Update existing rows ✅
+5. Error handling (missing file, unknown type) ✅
+6. Empty row handling ✅
+7. Null value handling ✅
+8. Invalid type coercion ✅
+9. Import history ✅
+10. Summary table display ✅
+11. Composite primary key ⚠️ (known bug)
+
+**Missing Test Coverage:**
+- Export command tests (not implemented)
+- Status command tests (not implemented)
+- Config command tests (not implemented)
 
 ---
 
-## 7. Points forts du code actuel
+## 7. Code Strengths
 
 ### 7.1 Architecture
 
-✅ **Architecture modulaire et claire**
-- Séparation des préoccupations bien définie
-- Entités cohérentes et réutilisables
-- Code organisé et facile à naviguer
+✅ **Modular and Clear Architecture**
+- Well-defined separation of concerns
+- Cohesive, reusable entities
+- Organized, navigable code
 
-✅ **Bonne utilisation des dépendances**
-- Typer pour la CLI
-- Pydantic pour la validation
-- Pandas pour la manipulation de données
-- Rich pour l'interface utilisateur
+✅ **Good Dependency Usage**
+- Typer for CLI
+- Pydantic for validation
+- Pandas for data manipulation
+- Rich for user interface
 
-✅ **Code orienté objet**
-- Encapsulation appropriée
-- Utilisation de propriétés
-- Méthodes bien nommées
+✅ **Object-Oriented Code**
+- Appropriate encapsulation
+- Property usage
+- Well-named methods
 
-### 7.2 Qualité du code
+### 7.2 Code Quality
 
-✅ **Type hints**
-- Code entièrement typé
-- Annotations de type cohérentes
+✅ **Type Hints**
+- Fully typed code
+- Consistent type annotations
 
 ✅ **Documentation**
-- Docstrings complètes
-- Commentaires explicatifs
+- Complete docstrings
+- Explanatory comments
 
-✅ **Gestion des erreurs**
-- Validation des entrées
-- Messages d'erreur clairs
-- Codes de sortie appropriés
+✅ **Error Handling**
+- Input validation
+- Clear error messages
+- Appropriate exit codes
 
 ✅ **Tests**
-- Couverture de tests complète
-- Tests d'intégration robustes
-- Fixtures bien organisées
+- Complete test coverage
+- Robust integration tests
+- Well-organized fixtures
 
-### 7.3 Fonctionnalités
+### 7.3 Features
 
-✅ **Détection des changements**
-- Hash de contenu SHA256
-- Évite les imports inutiles
+✅ **Change Detection**
+- SHA256 content hash
+- Avoids unnecessary imports
 
 ✅ **UPSERT**
-- Mise à jour intelligente des données
-- Support de clé primaire composite (partiellement)
+- Intelligent data updates
+- Partial composite key support
 
-✅ **Nettoyage des données**
-- Suppression des lignes vides
-- Nettoyage des espaces
-- Coercition de types
+✅ **Data Cleaning**
+- Empty row removal
+- Whitespace trimming
+- Type coercion
 
 ---
 
-## 8. Problèmes et limitations
+## 8. Issues and Limitations
 
-### 8.1 Problèmes connus
+### 8.1 Known Bugs
 
-⚠️ **Clé primaire composite**
-- L'UPSERT avec clé composite a un problème
-- Test marqué comme skip dans `test_import.py:327`
-- Commentaire : "The Table.upsert method doesn't properly handle composite primary keys"
+⚠️ **Composite Primary Key**
+- UPSERT with composite key has a bug
+- Test skipped in `test_import.py:327`
+- Comment: "The Table.upsert method doesn't properly handle composite primary keys"
 
-### 8.2 Fonctionnalités manquantes
+### 8.2 Missing Features
 
-❌ **Export vers Excel**
-- Placeholder seulement
-- Aucune implémentation
+❌ **Export to Excel**
+- Placeholder only
+- No implementation
 
-❌ **Status**
-- Affichage "No imports yet" en dur
-- Pas d'interrogation de l'historique
+❌ **Status Display**
+- Hardcoded "No imports yet"
+- No history querying
 
-❌ **Config**
-- Seule la signature est définie
-- Pas de logique d'ajout de mapping
+❌ **Configuration Management**
+- Only signature defined
+- No mapping management logic
 
 ### 8.3 Limitations
 
 📝 **Documentation**
-- README basique
-- Pas de documentation détaillée
-- Pas de guide utilisateur
+- Basic README
+- No detailed documentation
+- No user guide
 
 📝 **Configuration**
-- Mappings manuels dans JSON
-- Pas de CLI pour gérer les mappings
-- Pas de validation des mappings au chargement
+- Manual JSON mappings
+- No mapping CLI
+- No load-time validation
 
-📝 **Base de données**
-- SQLite seulement (pas d'extension à d'autres DB)
-- Pas de migrations de schéma
+📝 **Database**
+- SQLite only (no other DB support)
+- No schema migrations
 
 ---
 
-## 9. Dépendances
+## 9. Dependencies
 
-### 9.1 Dépendances principales
+### 9.1 Main Dependencies
 
 ```
 typer>=0.12.0         # CLI framework
 pydantic>=2.0.0       # Validation
-pandas>=2.0.0         # Manipulation de données
+pandas>=2.0.0         # Data manipulation
 openpyxl>=3.0.0       # Excel files
 sqlalchemy>=2.0.0     # ORM / DB abstraction
 rich>=13.0.0          # Terminal UI
 ```
 
-### 9.2 Dépendances de développement
+### 9.2 Development Dependencies
 
 ```
 pytest>=8.0.0         # Testing framework
@@ -490,13 +521,13 @@ pytest-cov>=4.0.0     # Coverage reporting
 
 ---
 
-## 10. État du développement
+## 10. Development Status
 
-### 10.1 Phase actuelle
+### 10.1 Current Phase
 
-**Phase 2-3** : L'import est complété, l'export et la gestion sont à faire
+**Phase 2-3**: Import is complete, export and management need to be done
 
-### 10.2 Historique des commits récents
+### 10.2 Recent Commit History
 
 ```
 24680d1 feat: implement complete import command with integration tests
@@ -506,76 +537,124 @@ b48ce49 test: add Table entity tests with UPSERT operations
 5763ec9 test: add DataFrame wrapper tests with type conversion
 ```
 
-### 10.3 Métriques de code
+### 10.3 Code Metrics
 
-- **Lignes de code CLI** : ~270
-- **Entités** : 5 modules
-- **Tests** : 6 fichiers de test
-- **Couverture** : Tests d'intégration + tests unitaires
-
----
-
-## 11. Recommandations
-
-### 11.1 Priorités à court terme
-
-1. **Corriger la clé primaire composite**
-   - Problème identifié dans `Table.upsert()`
-   - Test existant mais skipé
-
-2. **Implémenter la commande `status`**
-   - Afficher l'historique des imports
-   - Fonctionnalité simple à ajouter
-
-3. **Implémenter la commande `export`**
-   - Inverse de l'import
-   - Export Excel avec formatting
-
-### 11.2 Priorités à moyen terme
-
-4. **Compléter la commande `config`**
-   - Ajout/édition/suppression de mappings
-   - Validation des mappings
-
-5. **Améliorer la documentation**
-   - Guide utilisateur complet
-   - Documentation API
-   - Exemples d'utilisation
-
-6. **Gestion des erreurs**
-   - Meilleure gestion des erreurs SQL
-   - Logs détaillés
-   - Mode debug
-
-### 11.3 Améliorations futures
-
-7. **Performance**
-   - Import par lots pour gros fichiers
-   - Barre de progression pour l'import
-   - Parallélisation
-
-8. **Fonctionnalités avancées**
-   - Validation de données avant import
-   - Transformations personnalisées
-   - Support de plusieurs bases de données
+- **CLI Lines of Code:** ~270
+- **Entities:** 5 modules
+- **Tests:** 6 test files
+- **Coverage:** Integration + unit tests
 
 ---
 
-## 12. Conclusion
+## 11. Recommendations
 
-Le projet **Excel to SQLite** est dans un état **solide mais incomplet** :
+### 11.1 Short-Term Priorities
 
-**Points forts :**
-- Architecture bien conçue
-- Code de qualité
-- Tests complets
-- Fonctionnalité d'import robuste
+1. **Fix composite primary key bug**
+   - Issue identified in `Table.upsert()`
+   - Test exists but skipped
 
-**Points à améliorer :**
-- Export non implémenté
-- Gestion de configuration incomplète
-- Documentation limitée
-- Bug avec clé primaire composite
+2. **Implement `status` command**
+   - Display import history
+   - Simple to add
 
-**Recommandation principale :**
-Définir clairement le périmètre du projet (MVP) et prioriser les fonctionnalités manquantes avant d'ajouter de nouvelles fonctionnalités avancées.
+3. **Implement `export` command**
+   - Inverse of import
+   - Excel formatting
+
+4. **Implement basic `config` command**
+   - `--add-type` with auto-detection
+   - `--list` to show mappings
+
+### 11.2 Medium-Term Priorities
+
+5. **Complete `config` command**
+   - `--show <type>` for specific mapping
+   - `--remove <type>` to delete
+   - `--validate` to check syntax
+
+6. **Improve documentation**
+   - Complete user guide
+   - API documentation
+   - Usage examples
+
+7. **Error handling**
+   - Better SQL error handling
+   - Detailed logs
+   - Debug mode
+
+### 11.3 Future Enhancements
+
+8. **Performance**
+   - Batch imports for large files
+   - Import progress bar
+   - Parallelization
+
+9. **Advanced Features**
+   - Pre-import data validation
+   - Custom transformations
+   - Multiple database support
+   - Multiple sheet support
+
+---
+
+## 12. Missing Features Summary
+
+### Core MVP Features (Not Implemented)
+
+1. **`export` command** - Export SQLite data to Excel
+   - Export entire table (`--table`)
+   - Export SQL query results (`--query`)
+   - Excel formatting
+   - Export history tracking
+
+2. **`status` command** - Display import history
+   - Query `_import_history`
+   - Rich table display
+   - Statistics
+
+3. **`config` command** - Manage mappings
+   - `--add-type` with auto-detection
+   - `--list` all mappings
+   - `--show <type>` details
+   - `--remove <type>`
+   - `--validate` mappings
+
+### Bug Fixes
+
+4. **Composite primary key UPSERT** - Critical bug in `entities/table.py`
+
+### Nice-to-Have (Post-MVP)
+
+5. **Progress bars** - For long operations
+6. **Validation framework** - Pre-import data validation
+7. **Export formatting** - Enhanced Excel formatting
+8. **Multiple sheet support** - Import/export multiple sheets
+
+---
+
+## 13. Conclusion
+
+The **Excel to SQLite** project is in a **solid but incomplete state**:
+
+**Strengths:**
+- Well-designed architecture
+- Quality code
+- Complete tests
+- Robust import functionality
+
+**Areas for Improvement:**
+- Export not implemented
+- Incomplete configuration management
+- Limited documentation
+- Composite primary key bug
+
+**Main Recommendation:**
+Clearly define project scope (MVP) and prioritize missing features before adding new advanced functionality.
+
+**Priority Order:**
+1. Fix composite primary key bug
+2. Implement `status` command
+3. Implement `export` command
+4. Implement `config` command (basic)
+5. Complete documentation

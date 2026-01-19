@@ -158,28 +158,37 @@
 
 ## 3. Current Sprint
 
-### Sprint: Bug Fixes & Export Foundation
+### Sprint: Complete MVP Features
 
-**Duration:** 3 days
+**Duration:** 5 days
 **Start:** January 19, 2026
-**End:** January 22, 2026
+**End:** January 24, 2026
 
 ### Sprint Goals
 
-1. **Fix composite primary key bug**
+1. **Fix composite primary key bug** (CRITICAL)
    - Priority: HIGH
    - Effort: 4 hours
-   - Owner: TBD
+   - Status: 🔴 Not started
+   - Blocker: Must be fixed before MVP release
 
-2. **Implement `export` command (basic)**
+2. **Implement `status` command** (HIGH VALUE, LOW EFFORT)
+   - Priority: HIGH
+   - Effort: 3 hours
+   - Status: 🔴 Not started
+   - Why: Quick win, provides visibility into imports
+
+3. **Implement `export` command** (CORE FEATURE)
    - Priority: HIGH
    - Effort: 8 hours
-   - Owner: TBD
+   - Status: 🔴 Not started
+   - Why: Essential for bidirectional workflow
 
-3. **Implement `status` command**
+4. **Implement basic `config` command** (CORE FEATURE)
    - Priority: MEDIUM
-   - Effort: 4 hours
-   - Owner: TBD
+   - Effort: 6 hours
+   - Status: 🔴 Not started
+   - Scope: --add-type, --list, --show, --remove
 
 ### Tasks
 
@@ -312,23 +321,61 @@ def status() -> None:
 
 ## 4. Backlog
 
-### High Priority
+### High Priority (MVP Completion)
+
+**Story: Export Command Implementation**
+
+**Description:** Implement SQLite to Excel export functionality
+
+**Tasks:**
+- [ ] `export --table <name> --output <file>` - Export entire table
+- [ ] `export --query <sql> --output <file>` - Export query results
+- [ ] Add Database.export_table() method
+- [ ] Add Database.record_export() method
+- [ ] Create export history tracking
+- [ ] Add integration tests for export
+- [ ] Apply basic Excel formatting (headers, column widths)
+
+**Story: Status Command Implementation**
+
+**Description:** Display import history and statistics
+
+**Tasks:**
+- [ ] Implement Database.get_import_history() method
+- [ ] Display Rich table with import history
+- [ ] Show statistics (total imports, total rows)
+- [ ] Handle empty history gracefully
+- [ ] Add integration tests
 
 **Story: Configuration Management CLI**
 
 **Description:** Add CLI commands to manage mappings without editing JSON
 
 **Tasks:**
-- [ ] `config --add-type <name> --table <table> --pk <columns>`
-- [ ] `config --list` (show all mappings)
-- [ ] `config --show <type>` (show specific mapping)
-- [ ] `config --remove <type>` (delete mapping)
-- [ ] `config --validate` (validate all mappings)
-- [ ] Auto-detect columns from Excel file
+- [ ] `config --add-type <name> --table <table> --pk <columns>` - Create new mapping
+- [ ] `config --list` - Show all mappings in table format
+- [ ] `config --show <type>` - Display specific mapping details
+- [ ] `config --remove <type>` - Delete a mapping
+- [ ] `config --validate` - Validate all mappings
+- [ ] Auto-detect columns from Excel file for --add-type
+- [ ] Add integration tests for config
+
+**Story: Fix Composite Primary Key Bug**
+
+**Description:** Fix UPSERT with composite primary keys
+
+**Tasks:**
+- [ ] Debug current UPSERT implementation
+- [ ] Fix ON CONFLICT clause for composite keys
+- [ ] Enable skipped test in test_import.py:327
+- [ ] Add additional tests for edge cases
+- [ ] Verify all existing tests still pass
+
+### Medium Priority (Enhancements)
 
 **Story: Export Formatting**
 
-**Description:** Apply formatting to exported Excel files
+**Description:** Apply advanced formatting to exported Excel files
 
 **Tasks:**
 - [ ] Bold headers
@@ -345,8 +392,6 @@ def status() -> None:
 - [ ] Import progress bar
 - [ ] Export progress bar
 - [ ] File reading progress
-
-### Medium Priority
 
 **Story: Validation Framework**
 
@@ -378,7 +423,7 @@ def status() -> None:
 - [ ] Import multiple sheets at once
 - [ ] Sheet-specific mappings
 
-### Low Priority
+### Low Priority (Post-MVP)
 
 **Story: Advanced Query Features**
 
@@ -412,51 +457,60 @@ def status() -> None:
 
 ## 5. Technical Debt
 
-### High Priority Debt
+### Critical Priority Debt
 
 **1. Composite Primary Key Bug**
-- **Impact:** HIGH - Core functionality broken
+- **Impact:** CRITICAL - Core functionality broken
 - **Effort:** 4 hours
 - **Location:** `entities/table.py`
-- **Action:** Fix UPSERT query generation
+- **Action:** Fix UPSERT query generation for composite keys
+- **Test:** `tests/test_import.py:327`
 
-**2. Hardcoded Error Messages**
+### High Priority Debt
+
+**2. Missing Export, Status, Config Implementations**
+- **Impact:** HIGH - MVP incomplete
+- **Effort:** 17 hours total
+- **Location:** `cli.py`, `entities/database.py`
+- **Action:** Implement three missing core commands
+
+**3. Hardcoded Error Messages**
 - **Impact:** MEDIUM - User experience
 - **Effort:** 2 hours
 - **Location:** Throughout CLI
 - **Action:** Centralize error messages
-
-**3. Missing Type Hints in Some Methods**
-- **Impact:** LOW - Maintainability
-- **Effort:** 2 hours
-- **Location:** Various entities
-- **Action:** Add complete type hints
-
-### Medium Priority Debt
 
 **4. No Logging Framework**
 - **Impact:** MEDIUM - Debugging difficulty
 - **Effort:** 4 hours
 - **Action:** Add Python logging module
 
+### Medium Priority Debt
+
 **5. Test Coverage Gaps**
 - **Impact:** MEDIUM - Quality assurance
 - **Effort:** 6 hours
-- **Action:** Add tests for edge cases
+- **Action:** Add tests for export, status, config commands
 
 **6. No Configuration Validation**
 - **Impact:** MEDIUM - Runtime errors
 - **Effort:** 2 hours
 - **Action:** Validate mappings on load
 
+**7. Missing Type Hints in Some Methods**
+- **Impact:** LOW - Maintainability
+- **Effort:** 2 hours
+- **Location:** Various entities
+- **Action:** Add complete type hints
+
 ### Low Priority Debt
 
-**7. Code Duplication**
+**8. Code Duplication**
 - **Impact:** LOW - Maintainability
 - **Effort:** 4 hours
 - **Action:** Extract common patterns
 
-**8. Missing Docstrings**
+**9. Missing Docstrings**
 - **Impact:** LOW - Documentation
 - **Effort:** 2 hours
 - **Action:** Complete docstrings
@@ -610,23 +664,25 @@ For each sprint to be considered "done":
 ### Immediate Actions (This Week)
 
 1. ✅ Create specification documents
-2. 🔄 Fix composite primary key bug
-3. ⏳ Implement export command
-4. ⏳ Implement status command
+2. 🔴 Fix composite primary key bug (CRITICAL)
+3. 🔴 Implement `status` command (QUICK WIN)
+4. 🔴 Implement `export` command (CORE)
+5. 🔴 Implement `config` command (CORE)
 
 ### Short-term Actions (This Month)
 
-1. Complete MVP features
-2. Write comprehensive tests
-3. Improve documentation
-4. Prepare v0.1.0 release
+1. Complete all MVP features
+2. Write comprehensive tests for new features
+3. Improve documentation (README, user guide)
+4. Fix any remaining bugs
+5. Prepare v0.1.0 release
 
 ### Long-term Actions (Next Quarter)
 
-1. Gather user feedback
-2. Plan v0.2.0 features
-3. Performance optimization
-4. Community building
+1. Gather user feedback on MVP
+2. Plan v0.2.0 features (enhancements)
+3. Performance optimization for large files
+4. Community building and contributions
 
 ---
 
@@ -641,9 +697,9 @@ For each sprint to be considered "done":
 
 ### Resources
 
-- **Repository:** https://github.com/yourusername/excel-to-sql
-- **Issues:** https://github.com/yourusername/excel-to-sql/issues
-- **Documentation:** https://github.com/yourusername/excel-to-sql/wiki
+- **Repository:** https://github.com/davidfrancoeur/excel-to-sql
+- **Issues:** https://github.com/davidfrancoeur/excel-to-sql/issues
+- **Documentation:** https://github.com/davidfrancoeur/excel-to-sql/wiki
 
 ---
 
