@@ -430,12 +430,12 @@ def status() -> None:
 
 
 @app.command()
-def config_cmd(
+def config(
     add_type: str = Option(None, "--add-type", help="Add new type configuration"),
     table: str = Option(None, "--table", help="Target table name"),
     pk: str = Option(None, "--pk", help="Primary key column(s), comma-separated for composite"),
     file: str = Option(None, "--file", help="Excel file to auto-detect columns (optional with --add-type)"),
-    list: bool = Option(False, "--list", help="List all mappings"),
+    list_all: bool = Option(False, "--list", help="List all mappings"),
     show: str = Option(None, "--show", help="Show specific mapping details"),
     remove: str = Option(None, "--remove", help="Remove mapping"),
     validate: bool = Option(False, "--validate", help="Validate all mappings"),
@@ -452,7 +452,7 @@ def config_cmd(
     # Route to appropriate subcommand
     if add_type:
         _config_add_type(project, add_type, table, pk, file)
-    elif list:
+    elif list_all:
         _config_list(project)
     elif show:
         _config_show(project, show)

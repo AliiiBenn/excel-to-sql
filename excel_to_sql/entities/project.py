@@ -221,17 +221,23 @@ class Project:
                         "error": f"Missing required field: {field}"
                     })
 
-            # Validate primary_key exists in column_mappings
+            # Validate primary_key exists in column_mappings (as target)
             if "primary_key" in mapping and "column_mappings" in mapping:
                 primary_key = mapping["primary_key"]
                 column_mappings = mapping["column_mappings"]
 
+                # Get all target column names
+                target_columns = {
+                    config.get("target", source)
+                    for source, config in column_mappings.items()
+                }
+
                 if isinstance(primary_key, list):
                     for pk_col in primary_key:
-                        if pk_col not in column_mappings:
+                        if pk_col not in target_columns:
                             errors.append({
                                 "type": type_name,
-                                "error": f"Primary key '{pk_col}' not found in column_mappings"
+                                "error": f"Primary key '{pk_col}' not found in column mappings (as target)"
                             })
 
         return errors
