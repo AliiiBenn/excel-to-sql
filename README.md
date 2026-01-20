@@ -570,7 +570,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**Made with ❤️ by David Francoeur**
+**Made with ❤️ by Code With Dave**
 
 [⬆ Back to top](#excel-to-sqlite-cli)
 
