@@ -43,8 +43,8 @@ pip install excel-to-sql
 uv pip install excel-to-sql
 
 # Or install from source
-git clone https://github.com/yourusername/excel-to-sqlite.git
-cd excel-to-sqlite
+git clone https://github.com/AliiiBenn/excel-to-sql.git
+cd excel-to-sql
 uv sync
 ```
 
@@ -269,7 +269,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Documentation](docs/)
 - [Changelog](CHANGELOG.md)
-- [Issue Tracker](https://github.com/yourusername/excel-to-sqlite/issues)
+- [Issue Tracker](https://github.com/AliiiBenn/excel-to-sql/issues)
 - [PyPI Package](https://pypi.org/project/excel-to-sql/)
 
 ## 🎉 Version 0.2.0 Highlights
