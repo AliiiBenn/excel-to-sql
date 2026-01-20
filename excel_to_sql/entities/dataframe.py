@@ -4,10 +4,16 @@ DataFrame wrapper entity for cleaning and transformation.
 Encapsulates data cleaning, column mapping, and type conversion logic.
 """
 
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 import pandas as pd
 import numpy as np
+
+from excel_to_sql.transformations.mapping import ValueMapping
+from excel_to_sql.transformations.calculated import CalculatedColumns
+from excel_to_sql.validators.base import ValidationResult
+from excel_to_sql.validators.rules import RuleSet
+from excel_to_sql.validators.reference import ReferenceValidator
 
 
 class DataFrame:
@@ -188,6 +194,105 @@ class DataFrame:
             # Removes rows where id OR name is null
         """
         self._df.dropna(subset=columns, inplace=True)
+
+    def apply_value_mapping(self, value_mapping: ValueMapping) -> None:
+        """
+        Apply value mapping to standardize data.
+
+        Args:
+            value_mapping: ValueMapping instance
+
+        Example:
+            mapping = ValueMapping({"status": {"1": "Active", "0": "Inactive"}})
+            df.apply_value_mapping(mapping)
+        """
+        self._df = value_mapping.apply(self._df)
+
+    def apply_calculated_columns(self, calculated_columns: CalculatedColumns) -> None:
+        """
+        Apply calculated columns to DataFrame.
+
+        Args:
+            calculated_columns: CalculatedColumns instance
+
+        Example:
+            columns = CalculatedColumns([
+                CalculatedColumn("total", "quantity * price")
+            ])
+            df.apply_calculated_columns(columns)
+        """
+        self._df = calculated_columns.apply(self._df)
+
+    def validate(self, ruleset: RuleSet) -> ValidationResult:
+        """
+        Validate DataFrame against ruleset.
+
+        Args:
+            ruleset: RuleSet with validation rules
+
+        Returns:
+            ValidationResult with errors and warnings
+
+        Example:
+            rules = RuleSet([
+                ValidationRule("id", "unique"),
+                ValidationRule("email", "regex", {"pattern": r"^[^@]+@[^@]+$"})
+            ])
+            result = df.validate(rules)
+        """
+        return ruleset.validate(self._df)
+
+    def validate_references(
+        self, reference_validators: List[ReferenceValidator]
+    ) -> ValidationResult:
+        """
+        Validate DataFrame against reference tables.
+
+        Args:
+            reference_validators: List of ReferenceValidator instances
+
+        Returns:
+            Combined ValidationResult from all validators
+
+        Example:
+            validators = [
+                ReferenceValidator("category_id", db, "categories"),
+                ReferenceValidator("user_id", db, "users")
+            ]
+            result = df.validate_references(validators)
+        """
+        final_result = ValidationResult(is_valid=True)
+
+        for validator in reference_validators:
+            result = validator.validate(self._df)
+            final_result.merge(result)
+
+        return final_result
+
+    def apply_transformations(self, mapping: Dict[str, Any]) -> None:
+        """
+        Apply all transformations from mapping configuration.
+
+        This is a convenience method that applies:
+        1. Value mappings
+        2. Calculated columns
+
+        Args:
+            mapping: Full mapping configuration dict
+        """
+        # Apply value mappings
+        if "value_mappings" in mapping and mapping["value_mappings"]:
+            mappings_dict = {}
+            for vm_config in mapping["value_mappings"]:
+                mappings_dict[vm_config.column] = vm_config.mappings
+
+            value_mapping = ValueMapping(mappings_dict)
+            self.apply_value_mapping(value_mapping)
+
+        # Apply calculated columns
+        if "calculated_columns" in mapping and mapping["calculated_columns"]:
+            calc_columns = CalculatedColumns.from_config(mapping)
+            self.apply_calculated_columns(calc_columns)
 
     def to_pandas(self) -> pd.DataFrame:
         """Get underlying pandas DataFrame."""
