@@ -14,6 +14,9 @@
 - 🔁 **Incremental Imports** - Only process changed files using content hashing
 - 📑 **Multi-Sheet Support** - Import/export multiple sheets in one operation
 - ⚡ **High Performance** - Powered by Pandas and SQLAlchemy 2.0
+- 🔄 **UPSERT Logic** - Automatically insert new rows or update existing ones
+- 🧹 **Data Cleaning** - Automatic whitespace trimming and empty row removal
+- 📊 **Rich Terminal Display** - Beautiful colored output with tables and progress
 
 ### Data Transformations
 - 🔄 **Value Mapping** - Standardize data values (e.g., "NY" → "New York")
@@ -149,6 +152,159 @@ profile = report.generate(
 print(f"Null percentage: {profile.null_percentage}%")
 print(f"Unique values: {profile.unique_count}")
 print(f"Issues found: {len(profile.get_issues())}")
+```
+
+### Core Features (Original v0.1.x)
+
+#### Automatic Schema Detection
+
+Tables are automatically created from Excel data with appropriate types:
+
+```bash
+excel-to-sql import --file products.xlsx --type products
+
+# Output:
+# ✓ Table 'products' created automatically
+# ✓ Detected columns: id (integer), name (string), price (float)
+# ✓ Imported 150 rows
+```
+
+#### Column Mapping Configuration
+
+Define how Excel columns map to database columns:
+
+```json
+{
+  "products": {
+    "target_table": "products",
+    "primary_key": ["id"],
+    "column_mappings": {
+      "Product ID": {"target": "id", "type": "integer"},
+      "Product Name": {"target": "name", "type": "string"},
+      "Unit Price": {"target": "price", "type": "float"},
+      "In Stock": {"target": "in_stock", "type": "boolean"},
+      "Created Date": {"target": "created_at", "type": "date"}
+    }
+  }
+}
+```
+
+#### Type Conversions
+
+Automatic type conversion with support for 5 data types:
+
+```python
+from excel_to_sql.entities import DataFrame
+
+# Type conversions happen automatically during import
+df = DataFrame(raw_df)
+df.apply_mapping(mapping)
+
+# Supported types:
+# - string: TEXT columns
+# - integer: INTEGER with Int64 (nullable)
+# - float: REAL columns
+# - boolean: BOOLEAN (0/1)
+# - date: TIMESTAMP (ISO-8601)
+```
+
+#### UPSERT Logic
+
+Intelligent insert-or-update based on primary keys:
+
+```bash
+# First import - inserts 100 rows
+excel-to-sql import --file products.xlsx --type products
+
+# Second import with updates:
+# - Updates 20 existing rows (based on ID)
+# - Inserts 10 new rows
+# - Skips unchanged rows
+excel-to-sql import --file products_updated.xlsx --type products
+```
+
+#### Data Cleaning
+
+Automatic data cleaning during import:
+
+```python
+from excel_to_sql.entities import DataFrame
+
+df = DataFrame(raw_df)
+df.clean()
+
+# Automatically:
+# ✓ Strips whitespace from strings
+# ✓ Removes empty strings
+# ✓ Drops completely empty rows
+# ✓ Lowercases column names
+```
+
+#### Rich Terminal Display
+
+Beautiful terminal output with colors and tables:
+
+```bash
+$ excel-to-sql import --file data.xlsx --type sales
+
+╭──────────────────────────────────────────────────────────╮
+│  Importing Excel file to SQLite                          │
+╰──────────────────────────────────────────────────────────╯
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  File: data.xlsx                                        ┃
+┃  Type: sales                                            ┃
+┃  Rows: 1,234                                            ┃
+┃  Columns: 12                                            ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+⠙ Processing...
+✓ Data cleaned
+✓ Transformations applied
+✓ Data validated (0 errors, 3 warnings)
+✓ Data imported to table 'sales'
+✓ Import history recorded
+
+╭──────────────────────────────────────────────────────────╮
+│  Import completed successfully!                          │
+╰──────────────────────────────────────────────────────────╯
+```
+
+#### Import History
+
+Track all imports with automatic history:
+
+```bash
+$ excel-to-sql history
+
+┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┓
+┃ File      ┃ Type            ┃ Table    ┃ Rows  ┃ Timestamp          ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━┩
+│ data.xlsx │ sales           │ sales    │ 1,234 │ 2024-01-20 10:30   │
+│ prod.xlsx │ products        │ products │ 150   │ 2024-01-20 09:15   │
+│ cat.xlsx  │ categories      │ categories│ 25    │ 2024-01-20 09:00   │
+└───────────┴─────────────────┴──────────┴───────┴────────────────────┘
+```
+
+#### Project Management
+
+Initialize and manage projects:
+
+```bash
+# Initialize a new project
+excel-to-sql init
+
+# Add a new mapping type
+excel-to-sql config add --type customers
+
+# List all types
+excel-to-sql config list
+
+# Show mapping for a type
+excel-to-sql config show --type products
+
+# Remove a type
+excel-to-sql config remove --type old_type
 ```
 
 ## 📖 Configuration
