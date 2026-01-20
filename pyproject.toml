@@ -1,23 +1,27 @@
 [project]
 name = "excel-to-sql"
-version = "0.1.1"
-description = "CLI tool for importing Excel files to SQL and exporting back"
+version = "0.2.0"
+description = "CLI tool and Python SDK for importing Excel files to SQLite with advanced transformations and validation"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
     { name = "Code with dave", email = "davidddpereiraaa6@gmail.com" }
 ]
-keywords = ["excel", "sql", "cli", "etl", "import", "export"]
+keywords = ["excel", "sql", "sqlite", "cli", "etl", "import", "export", "data-validation", "data-quality", "transformations"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Database",
-    "Topic :: Utilities",
+    "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
 ]
 
 dependencies = [
@@ -31,8 +35,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0.0",
-    "pytest-cov>=4.0.0",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
 ]
 
 [project.scripts]
@@ -41,7 +45,9 @@ excel-to-sql = "excel_to_sql.cli:app"
 [project.urls]
 Homepage = "https://github.com/AliiiBenn/excel-to-sql"
 Repository = "https://github.com/AliiiBenn/excel-to-sql"
+Documentation = "https://github.com/AliiiBenn/excel-to-sql/blob/main/README.md"
 Issues = "https://github.com/AliiiBenn/excel-to-sql/issues"
+Changelog = "https://github.com/AliiiBenn/excel-to-sql/blob/main/CHANGELOG.md"
 
 [build-system]
 requires = ["hatchling"]
@@ -56,3 +62,9 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --strict-markers --cov=excel_to_sql --cov-report=term-missing --cov-report=html"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+]
