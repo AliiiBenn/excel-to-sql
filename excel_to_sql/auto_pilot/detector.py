@@ -70,6 +70,50 @@ class PatternDetector:
         """Initialize the PatternDetector."""
         self._confidence: float = 0.0
 
+    @staticmethod
+    def _pluralize(word: str) -> str:
+        """
+        Simple pluralization for common English words.
+
+        Args:
+            word: Singular word to pluralize
+
+        Returns:
+            Plural form of the word
+
+        Example:
+            >>> PatternDetector._pluralize("category")
+            'categories'
+            >>> PatternDetector._pluralize("product")
+            'products'
+        """
+        # Common irregular plurals
+        irregular = {
+            "category": "categories",
+            "person": "people",
+            "child": "children",
+            "man": "men",
+            "woman": "women",
+            "tooth": "teeth",
+            "foot": "feet",
+            "mouse": "mice",
+            "goose": "geese",
+        }
+
+        if word in irregular:
+            return irregular[word]
+
+        # Words ending in 'y' -> 'ies'
+        if word.endswith("y"):
+            return word[:-1] + "ies"
+
+        # Words ending in 's', 'x', 'z', 'ch', 'sh' -> 'es'
+        if word.endswith(("s", "x", "z", "ch", "sh")):
+            return word + "es"
+
+        # Default: add 's'
+        return word + "s"
+
     def detect_patterns(
         self, df: pd.DataFrame, table_name: str
     ) -> dict[str, Any]:
@@ -165,7 +209,8 @@ class PatternDetector:
 
         # Find columns matching PK patterns
         for col in df.columns:
-            col_lower = col.lower().strip()
+            col_str = str(col)
+            col_lower = col_str.lower().strip()
             for pattern in self.PK_PATTERNS:
                 if re.match(pattern, col_lower, re.IGNORECASE):
                     candidates.append(col)
@@ -264,7 +309,8 @@ class PatternDetector:
         foreign_keys: list[dict[str, Any]] = []
 
         for col in df.columns:
-            col_lower = col.lower().strip()
+            col_str = str(col)
+            col_lower = col_str.lower().strip()
 
             # Check if column matches FK patterns
             is_fk = any(re.match(pattern, col_lower, re.IGNORECASE) for pattern in self.FK_PATTERNS)
@@ -277,13 +323,13 @@ class PatternDetector:
 
             # Pattern: no_<table> or <table>_id
             if col_lower.startswith("no_"):
-                ref_table = col_lower[3:] + "s"  # Pluralize
+                ref_table = self._pluralize(col_lower[3:])
             elif col_lower.endswith("_id"):
-                ref_table = col_lower[:-3] + "s"
+                ref_table = self._pluralize(col_lower[:-3])
             elif col_lower.endswith("_no"):
-                ref_table = col_lower[:-3] + "s"
+                ref_table = self._pluralize(col_lower[:-3])
             elif col_lower.endswith("_code"):
-                ref_table = col_lower[:-5] + "s"
+                ref_table = self._pluralize(col_lower[:-5])
 
             # Skip if FK references itself
             if ref_table and ref_table == table_name.lower():
@@ -332,7 +378,7 @@ class PatternDetector:
 
         # Find columns with status/state patterns
         status_pattern = re.compile(r"(etat|status|state)", re.IGNORECASE)
-        status_cols = [col for col in df.columns if status_pattern.search(col)]
+        status_cols = [col for col in df.columns if status_pattern.search(str(col))]
 
         if len(status_cols) < 2:
             return None

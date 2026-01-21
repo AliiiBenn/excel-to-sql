@@ -435,7 +435,7 @@ def version() -> None:
     """Show version information."""
     console.print(f"[bold cyan]excel-to-sql[/bold cyan] version [bold green]{__version__}[/bold green]")
     console.print("")
-    console.print("[dim]GitHub:[/dim] https://github.com/AliiiBenn/excel-to-sql")
+    console.print("[dim]GitHub:[/dim] https://github.com/wareflowx/excel-to-sql")
     console.print("[dim]PyPI:[/dim] https://pypi.org/project/excel-to-sql/")
     console.print("")
     console.print(f"[dim]Python: {__import__('sys').version.split()[0]}[/dim]")
