@@ -17,6 +17,8 @@
 - 🔄 **UPSERT Logic** - Automatically insert new rows or update existing ones
 - 🧹 **Data Cleaning** - Automatic whitespace trimming and empty row removal
 - 📊 **Rich Terminal Display** - Beautiful colored output with tables and progress
+- 🤖 **Auto-Pilot Mode** - Zero-configuration automatic setup with pattern detection
+- 🎯 **Interactive Wizard** - Step-by-step guided configuration
 
 ### Data Transformations
 - 🔄 **Value Mapping** - Standardize data values (e.g., "NY" → "New York")
@@ -106,6 +108,247 @@ sdk.export_to_excel(
     }
 )
 ```
+
+## 🤖 Auto-Pilot Mode
+
+The Auto-Pilot mode provides **zero-configuration** Excel to SQLite import with automatic pattern detection, quality scoring, and intelligent recommendations. No manual configuration required!
+
+### Quick Start with Auto-Pilot
+
+```bash
+# Automatic mode - analyze and generate configuration
+excel-to-sql magic --data ./excels
+
+# Interactive mode - guided step-by-step setup
+excel-to-sql magic --data ./excels --interactive
+
+# Dry run - analyze without generating configuration
+excel-to-sql magic --data ./excels --dry-run
+```
+
+### What Auto-Pilot Detects
+
+**Pattern Detection:**
+- 📌 Primary Keys - Automatically identifies unique columns
+- 🔗 Foreign Keys - Detects relationships between tables
+- 🔄 Value Mappings - Finds code columns (e.g., "1"/"0" → "Active"/"Inactive")
+- 📊 Split Fields - Identifies redundant status columns to combine
+- 🎯 Data Types - Infers SQL types from data
+
+**Quality Analysis:**
+- 📈 Quality Score (0-100) with letter grades (A-D)
+- ⚠️ Issue Detection (null values, duplicates, type mismatches)
+- 📊 Statistical Analysis (value distributions, outliers)
+- 🔍 Data Profiling (column types, null percentages)
+
+**Smart Recommendations:**
+- 💡 Prioritized suggestions (HIGH/MEDIUM/LOW)
+- 🛠️ Auto-Fixable issues with one-click corrections
+- 📝 Default value suggestions
+- 🌐 French code detection (ENTRÉE→inbound, SORTIE→outbound, etc.)
+
+### Automatic Mode Example
+
+```bash
+$ excel-to-sql magic --data ./excels --output .excel-to-sql
+
+╭──────────────────────────────────────────────────────────╮
+│              AUTO-PILOT MODE                             │
+│  Intelligent Excel to SQLite Configuration              │
+╰──────────────────────────────────────────────────────────╯
+
+Found 3 Excel file(s) in ./excels
+
+⠙ Analyzing Excel files...
+✓ Analyzed commandes.xlsx (20 rows, 5 columns)
+✓ Analyzed mouvements.xlsx (50 rows, 7 columns)
+✓ Analyzed produits.xlsx (10 rows, 4 columns)
+
+╭──────────────────────────────────────────────────────────╮
+│              DETECTION SUMMARY                           │
+│          3 table(s) analyzed                             │
+╰──────────────────────────────────────────────────────────╯
+
+┏━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━┳━━━━━━━━┓
+┃ Table    ┃ Rows  ┃ Primary Key ┃ Value    ┃ FKs ┃ Score  ┃
+┃          ┃       ┃             ┃ Maps     ┃     ┃        ┃
+┡━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━╇━━━━━━━━┩
+│ commandes│ 20    │ id          │ OK       │ 1   │ 92%    │
+│ mouvements│ 50   │ id          │ OK       │ 2   │ 88%    │
+│ produits │ 10    │ id          │ OK       │ 0   │ 95%    │
+└──────────┴───────┴─────────────┴──────────┴─────┴────────┘
+
+✓ Configuration generated successfully!
+  Location: .excel-to-sql/mappings.json
+  Tables: 3
+  Total Rows: 80
+```
+
+### Interactive Mode Example
+
+```bash
+$ excel-to-sql magic --data ./excels --interactive
+
+╭──────────────────────────────────────────────────────────╮
+│          INTERACTIVE IMPORT MODE                         │
+│       Guided setup with explanations                      │
+╰──────────────────────────────────────────────────────────╯
+
+You will be guided step-by-step through the configuration
+process for each Excel file.
+
+For each file, you can:
+  [bold green]1[/bold green] Accept all transformations
+  [bold yellow]3[/bold yellow] Skip this file
+  [bold cyan]4[/bold cyan] View sample data (10 rows)
+  [bold blue]5[/bold blue] View statistics
+
+Press ENTER to begin...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Step 1/3: commandes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃                   File Analysis                        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Metric          │ Value                                │
+├─────────────────┼──────────────────────────────────────┤
+│ Rows            │ 20                                   │
+│ Columns         │ 5                                    │
+│ Primary Key     │ id                                   │
+│ Quality Score   │ 92/100 (A)                           │
+│ Transformations │ 2                                    │
+└─────────────────┴──────────────────────────────────────┘
+
+Detected Transformations:
+
+  1. Value Mapping: type
+     ENTRÉE -> inbound
+     SORTIE -> outbound
+
+  2. Calculated Column: status
+     Expression: COALESCE(etat_superieur, etat_inferieur)
+
+Choice [1/3/4/5/h] (or 'q' to cancel): 1
+✓ All transformations accepted
+```
+
+### Auto-Pilot Components
+
+**PatternDetector** - Analyzes Excel files and detects patterns:
+```python
+from excel_to_sql.auto_pilot import PatternDetector
+
+detector = PatternDetector()
+patterns = detector.detect_patterns(df, "table_name")
+
+# Returns:
+# {
+#     "primary_key": "id",
+#     "foreign_keys": [...],
+#     "value_mappings": {...},
+#     "split_fields": [...],
+#     "confidence": 0.92
+# }
+```
+
+**QualityScorer** - Generates quality reports:
+```python
+from excel_to_sql.auto_pilot import QualityScorer
+
+scorer = QualityScorer()
+report = scorer.generate_quality_report(df, "table_name")
+
+# Returns:
+# {
+#     "score": 92,
+#     "grade": "A",
+#     "issues": [...],
+#     "column_stats": {...}
+# }
+```
+
+**RecommendationEngine** - Provides prioritized recommendations:
+```python
+from excel_to_sql.auto_pilot import RecommendationEngine
+
+engine = RecommendationEngine()
+recommendations = engine.generate_recommendations(
+    df, "table_name", quality_report, patterns
+)
+
+# Returns prioritized recommendations (HIGH/MEDIUM/LOW)
+```
+
+**AutoFixer** - Automatically fixes data quality issues:
+```python
+from excel_to_sql.auto_pilot import AutoFixer
+
+fixer = AutoFixer()
+result = fixer.apply_auto_fixes(
+    df, file_path, "Sheet1", recommendations, dry_run=False
+)
+
+# Automatically fixes:
+# - Null values with smart defaults
+# - French codes (ENTRÉE→inbound, etc.)
+# - Split fields with COALESCE
+```
+
+**InteractiveWizard** - Guided configuration:
+```python
+from excel_to_sql.ui import InteractiveWizard
+
+wizard = InteractiveWizard()
+result = wizard.run_interactive_mode(
+    excel_files, patterns_dict, quality_dict, output_path
+)
+```
+
+### Auto-Fix Capabilities
+
+Auto-Pilot can automatically fix common data quality issues:
+
+**Null Value Fixing:**
+- Fills nulls with smart defaults ("0", "CURRENT_TIMESTAMP", "Other")
+- Detects optimal default values from existing data
+- Preserves data integrity
+
+**French Code Translation:**
+- ENTRÉE → inbound
+- SORTIE → outbound
+- ACTIF → active
+- INACTIF → inactive
+- And 7 more common mappings
+
+**Split Field Combination:**
+- Combines redundant status columns
+- Uses COALESCE for intelligent fallback
+- Example: `etat_superieur`, `etat_inferieur` → `status`
+
+### When to Use Auto-Pilot
+
+✅ **Perfect for:**
+- Quick prototyping and testing
+- Ad-hoc data imports
+- Exploring new datasets
+- Learning the tool
+- Small to medium datasets
+
+❌ **Not ideal for:**
+- Production deployments (use generated config as template)
+- Complex custom transformations
+- Highly specialized business logic
+- Performance-critical operations
+
+### Best Practices
+
+1. **Start with Auto-Pilot** - Generate initial configuration automatically
+2. **Review Generated Config** - Verify detected patterns and mappings
+3. **Use Interactive Mode** - For complex datasets, review each file
+4. **Customize as Needed** - Edit the generated mappings.json for your needs
+5. **Test Before Production** - Always test with sample data first
 
 ### Advanced Transformations
 
@@ -428,20 +671,35 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Issue Tracker](https://github.com/wareflowx/excel-to-sql/issues)
 - [PyPI Package](https://pypi.org/project/excel-to-sql/)
 
-## 🎉 Version 0.2.0 Highlights
+## 🎉 Version 0.3.0 Highlights
 
-**12 Major Features Added:**
-1. ✅ Value Mapping for Data Standardization
-2. ✅ Calculated/Derived Columns
-3. ✅ Custom Validators
-4. ✅ Reference/Lookup Validation
-5. ✅ Data Profiling & Quality Reports
-6. ✅ Multi-Sheet Import
-7. ✅ Multi-Sheet Export
-8. ✅ Incremental/Delta Import
-9. ✅ Data Validation Rules
-10. ✅ Pre/Post Processing Hooks
-11. ✅ Python SDK / Programmatic API
-12. ✅ Metadata & Tags for Imports
+**Auto-Pilot Mode - Zero-Configuration Import:**
+1. ✅ **Pattern Detection** - Automatic detection of PKs, FKs, value mappings, split fields
+2. ✅ **Quality Scoring** - Multi-dimensional data quality analysis with grades (A-D)
+3. ✅ **Smart Recommendations** - Prioritized, actionable suggestions (HIGH/MEDIUM/LOW)
+4. ✅ **Auto-Fix Capabilities** - One-click corrections for common data issues
+5. ✅ **Interactive Wizard** - Step-by-step guided configuration workflow
+6. ✅ **French Code Support** - Automatic translation (ENTRÉE→inbound, etc.)
+7. ✅ **Split Field Detection** - Intelligent COALESCE for redundant columns
+8. ✅ **CLI Integration** - `magic` command with --interactive flag
 
-**68 tests added** with comprehensive coverage for all new features.
+**Under the Hood:**
+- **PatternDetector** (97% coverage) - Intelligent pattern recognition
+- **QualityScorer** (99% coverage) - Comprehensive quality analysis
+- **RecommendationEngine** (92% coverage) - Smart recommendations
+- **AutoFixer** (88% coverage) - Automatic data fixing with backup system
+- **InteractiveWizard** (54% coverage) - Rich terminal UI with guided flow
+
+**Testing:**
+- 143+ tests for Auto-Pilot components
+- Integration tests with real Excel fixtures
+- >85% coverage for core Auto-Pilot modules
+
+**Previous Features (v0.2.0):**
+- Value Mapping, Calculated Columns, Custom Validators
+- Data Profiling & Quality Reports
+- Multi-Sheet Import/Export
+- Incremental Import with UPSERT
+- Python SDK & Programmatic API
+
+**Total: 200+ tests** with comprehensive coverage across all features.
