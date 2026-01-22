@@ -18,7 +18,7 @@ class TestMagicCommand:
 
     def setup_method(self) -> None:
         """Set up test fixtures."""
-        self.fixtures_dir = Path(__file__).parent.parent / "fixtures" / "auto_pilot"
+        self.fixtures_dir = Path(__file__).parent / "fixtures" / "auto_pilot"
 
     def _run_magic_command(self, args: list[str]) -> tuple[int, str, str]:
         """
@@ -77,7 +77,7 @@ class TestMagicCommand:
         assert "commandes" in stdout
         assert "mouvements" in stdout
         assert "produits" in stdout
-        assert "Dry-run mode" in stdout
+        assert "Dry-Run Mode" in stdout
 
     def test_magic_command_detects_primary_keys(self) -> None:
         """Test that magic command detects primary keys."""
@@ -87,9 +87,9 @@ class TestMagicCommand:
         ])
 
         assert exit_code == 0
-        assert "PK: commande" in stdout
-        assert "PK: oid" in stdout
-        assert "PK: no_produit" in stdout
+        assert "PK: [bold green]commande[/bold green]" in stdout
+        assert "PK: [bold green]oid[/bold green]" in stdout
+        assert "PK: [bold green]no_produit[/bold green]" in stdout
 
     def test_magic_command_shows_summary_table(self) -> None:
         """Test that magic command displays detection summary table."""
@@ -99,11 +99,11 @@ class TestMagicCommand:
         ])
 
         assert exit_code == 0
-        assert "Detection Summary" in stdout
+        assert "DETECTION SUMMARY" in stdout
         assert "Table" in stdout
         assert "Rows" in stdout
         assert "PK" in stdout
-        assert "Confidence" in stdout
+        assert "Score" in stdout
 
     def test_magic_command_generates_config_file(self) -> None:
         """Test that magic command generates mappings.json file."""
@@ -116,14 +116,14 @@ class TestMagicCommand:
             ])
 
             assert exit_code == 0
-            assert "Auto-Pilot Complete" in stdout
+            assert "Auto-Pilot Analysis Complete" in stdout
 
             # Verify mappings.json was created
             mappings_file = output_dir / "mappings.json"
             assert mappings_file.exists()
 
             # Verify it's valid JSON
-            with open(mappings_file, "r") as f:
+            with open(mappings_file, "r", encoding="utf-8") as f:
                 config = json.load(f)
 
             assert "mappings" in config
@@ -142,7 +142,7 @@ class TestMagicCommand:
             ])
 
             mappings_file = output_dir / "mappings.json"
-            with open(mappings_file, "r") as f:
+            with open(mappings_file, "r", encoding="utf-8") as f:
                 config = json.load(f)
 
             # Verify produits table structure
@@ -170,7 +170,7 @@ class TestMagicCommand:
             ])
 
             mappings_file = output_dir / "mappings.json"
-            with open(mappings_file, "r") as f:
+            with open(mappings_file, "r", encoding="utf-8") as f:
                 config = json.load(f)
 
             # Verify produits has value mappings
@@ -194,7 +194,7 @@ class TestMagicCommand:
             ])
 
             mappings_file = output_dir / "mappings.json"
-            with open(mappings_file, "r") as f:
+            with open(mappings_file, "r", encoding="utf-8") as f:
                 config = json.load(f)
 
             # Verify metadata
@@ -217,7 +217,7 @@ class TestMagicCommand:
             ])
 
             mappings_file = output_dir / "mappings.json"
-            with open(mappings_file, "r") as f:
+            with open(mappings_file, "r", encoding="utf-8") as f:
                 config = json.load(f)
 
             # Verify mouvements structure
