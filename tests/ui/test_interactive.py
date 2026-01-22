@@ -161,3 +161,149 @@ class TestInteractiveWizard:
 
         # Just verify it doesn't crash
         wizard._show_help()
+
+    def test_view_sample_data(self) -> None:
+        """Test viewing sample data from file."""
+        wizard = InteractiveWizard()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "test.xlsx"
+            df = pd.DataFrame({
+                "id": [1, 2, 3, 4, 5],
+                "name": ["A", "B", "C", "D", "E"]
+            })
+            df.to_excel(file_path, index=False)
+
+            # Mock input to avoid blocking
+            import builtins
+            original_input = builtins.input
+            builtins.input = lambda _: ""
+
+            try:
+                # Just verify it doesn't crash
+                wizard._view_sample_data(file_path)
+            finally:
+                builtins.input = original_input
+
+    def test_view_statistics(self) -> None:
+        """Test viewing statistics for file."""
+        wizard = InteractiveWizard()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "test.xlsx"
+            df = pd.DataFrame({
+                "id": [1, 2, 3],
+                "name": ["A", None, "C"],
+                "value": [1.5, 2.5, None]
+            })
+            df.to_excel(file_path, index=False)
+
+            # Mock input to avoid blocking
+            import builtins
+            original_input = builtins.input
+            builtins.input = lambda _: ""
+
+            try:
+                # Just verify it doesn't crash
+                wizard._view_statistics(file_path)
+            finally:
+                builtins.input = original_input
+
+    def test_get_user_choice_valid_input(self) -> None:
+        """Test get_user_choice with valid input."""
+        wizard = InteractiveWizard()
+
+        # Mock input to return '1'
+        import builtins
+        original_input = builtins.input
+        builtins.input = lambda _: "1"
+
+        try:
+            choice = wizard._get_user_choice()
+            assert choice == "1"
+        finally:
+            builtins.input = original_input
+
+    def test_get_user_choice_quit(self) -> None:
+        """Test get_user_choice with quit command."""
+        wizard = InteractiveWizard()
+
+        import builtins
+        original_input = builtins.input
+        builtins.input = lambda _: "q"
+
+        try:
+            choice = wizard._get_user_choice()
+            assert choice == "q"
+        finally:
+            builtins.input = original_input
+
+    def test_view_sample_data_handles_errors(self) -> None:
+        """Test sample data viewer handles file errors."""
+        wizard = InteractiveWizard()
+
+        # Test with non-existent file
+        fake_path = Path("nonexistent.xlsx")
+
+        # Mock input to avoid blocking
+        import builtins
+        original_input = builtins.input
+        builtins.input = lambda _: ""
+
+        try:
+            # Should not crash
+            wizard._view_sample_data(fake_path)
+        finally:
+            builtins.input = original_input
+
+    def test_view_statistics_handles_errors(self) -> None:
+        """Test statistics viewer handles file errors."""
+        wizard = InteractiveWizard()
+
+        # Test with non-existent file
+        fake_path = Path("nonexistent.xlsx")
+
+        # Mock input to avoid blocking
+        import builtins
+        original_input = builtins.input
+        builtins.input = lambda _: ""
+
+        try:
+            # Should not crash
+            wizard._view_statistics(fake_path)
+        finally:
+            builtins.input = original_input
+
+    def test_show_file_analysis_handles_errors(self) -> None:
+        """Test file analysis handles file read errors."""
+        wizard = InteractiveWizard()
+
+        # Test with non-existent file
+        fake_path = Path("nonexistent.xlsx")
+        patterns = {"primary_key": "id"}
+        quality = {"score": 100, "grade": "A+"}
+
+        # Should not crash, will show 0 rows/cols
+        wizard._show_file_analysis(fake_path, patterns, quality)
+
+    def test_show_transformations_unknown_type(self) -> None:
+        """Test showing transformations with unknown type."""
+        wizard = InteractiveWizard()
+
+        transformations = [
+            {
+                "type": "unknown_type",
+                "column": "test"
+            }
+        ]
+
+        # Should not crash with unknown type
+        wizard._show_transformations(transformations)
+
+    def test_get_transformations_none_patterns(self) -> None:
+        """Test getting transformations with None patterns."""
+        wizard = InteractiveWizard()
+
+        # Test with None patterns dict
+        transformations = wizard._get_transformations(None)
+        assert transformations == []

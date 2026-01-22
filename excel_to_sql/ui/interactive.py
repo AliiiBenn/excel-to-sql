@@ -243,9 +243,12 @@ class InteractiveWizard:
                 self.console.print(f"     Expression: {expr}")
                 self.console.print("")
 
-    def _get_transformations(self, patterns: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _get_transformations(self, patterns: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Extract transformations from patterns."""
         transformations = []
+
+        if not patterns:
+            return transformations
 
         # Value mappings
         value_mappings = patterns.get("value_mappings", {})
