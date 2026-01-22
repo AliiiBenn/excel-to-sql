@@ -77,7 +77,9 @@ class AutoFixer:
             "fixes_applied": [],
             "backup_path": None,
             "rows_modified": 0,
-            "dry_run": dry_run
+            "total_fixes": 0,
+            "dry_run": dry_run,
+            "status": "success"
         }
 
         # Filter for auto-fixable recommendations only
