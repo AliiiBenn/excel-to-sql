@@ -7,7 +7,8 @@
       "Bash(uv run pytest:*)",
       "Bash(~/tools/gh/bin/gh issue close:*)",
       "Bash(gh issue view:*)",
-      "Bash(uv run excel-to-sql:*)"
+      "Bash(uv run excel-to-sql:*)",
+      "Bash(gh issue list:*)"
     ]
   }
 }
