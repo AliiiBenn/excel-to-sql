@@ -1,10 +1,5 @@
 # Test: Add Missing Test Coverage for SDK, Models, and Config
 
-**Priority:** HIGH
-**Severity:** Medium
-**Type:** Testing
-**Estimated Time:** 6-8 hours
-
 ## Problem Description
 
 Several critical modules lack dedicated test coverage, reducing confidence in code quality and making refactoring risky.

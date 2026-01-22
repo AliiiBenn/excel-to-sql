@@ -1,10 +1,5 @@
 # Refactor: Improve Performance, UX, and Architecture
 
-**Priority:** MEDIUM
-**Severity:** Medium
-**Type:** Refactoring
-**Estimated Time:** 8-12 hours
-
 ## Problem Description
 
 The codebase has several performance issues, user experience gaps, and architectural inconsistencies that impact usability and maintainability.

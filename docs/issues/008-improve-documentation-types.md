@@ -1,10 +1,5 @@
 # Docs: Improve Documentation and Type Hints
 
-**Priority:** MEDIUM
-**Severity:** Low
-**Type:** Documentation
-**Estimated Time:** 4-6 hours
-
 ## Problem Description
 
 The codebase has incomplete docstrings, inconsistent type hints, and lacks technical documentation needed for contributors and maintainers.

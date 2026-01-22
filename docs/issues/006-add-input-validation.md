@@ -1,10 +1,5 @@
 # Security: Add Input Validation and Sanitization
 
-**Priority:** HIGH
-**Severity:** High
-**Type:** Security
-**Estimated Time:** 3-5 hours
-
 ## Problem Description
 
 The application lacks proper input validation and sanitization, creating potential security vulnerabilities when processing user-provided file paths and data.

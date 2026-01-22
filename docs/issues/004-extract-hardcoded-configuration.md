@@ -1,10 +1,5 @@
 # Refactor: Extract Hardcoded Configuration Values
 
-**Priority:** HIGH
-**Severity:** Medium
-**Type:** Refactoring
-**Estimated Time:** 4-6 hours
-
 ## Problem Description
 
 The codebase contains numerous hardcoded values throughout the CLI and modules, making the application difficult to configure and maintain. These values should be extracted into configuration files or constants.

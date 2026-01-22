@@ -1,10 +1,5 @@
 # Refactor: Fix Code Duplication and Project Hygiene Issues
 
-**Priority:** LOW
-**Severity:** Low
-**Type:** Refactoring
-**Estimated Time:** 4-6 hours
-
 ## Problem Description
 
 The codebase contains duplicated code logic and project hygiene issues that impact maintainability and leave temporary files behind.
