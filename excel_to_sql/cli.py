@@ -451,6 +451,7 @@ def magic(
     data_path: str = Option(".", "--data", "-d", help="Path to directory containing Excel files"),
     output_path: str = Option(".excel-to-sql", "--output", "-o", help="Output directory for generated mappings"),
     dry_run: bool = Option(False, "--dry-run", help="Analyze files without generating configuration"),
+    interactive: bool = Option(False, "--interactive", "-i", help="Interactive mode with guided configuration"),
 ) -> None:
     """Auto-pilot: Automatically detect patterns and generate configuration."""
     import sys
@@ -464,11 +465,13 @@ def magic(
     from rich.live import Live
     from rich.align import Align
 
-    # Import PatternDetector
+    # Import Auto-Pilot components
     try:
         from excel_to_sql.auto_pilot.detector import PatternDetector
-    except ImportError:
-        console.print("[red]Error:[/red] PatternDetector not available")
+        from excel_to_sql.auto_pilot.quality import QualityScorer
+        from excel_to_sql.ui.interactive import InteractiveWizard
+    except ImportError as e:
+        console.print(f"[red]Error:[/red] {e}")
         console.print("[dim]This feature requires the auto_pilot module[/dim]")
         raise Exit(1)
 
@@ -552,6 +555,151 @@ def magic(
 
             except Exception as e:
                 console.print(f"[red]Error processing {excel_file.name}:[/red] {e}")
+
+    # Interactive mode
+    if interactive:
+        console.print("")
+        console.print("[bold cyan]Starting Interactive Mode...[/bold cyan]")
+        console.print("")
+
+        # Initialize quality scorer
+        scorer = QualityScorer()
+
+        # Prepare patterns and quality dictionaries for wizard
+        patterns_dict: Dict[str, Dict[str, Any]] = {}
+        quality_dict: Dict[str, Dict[str, Any]] = {}
+
+        for key, result in all_results.items():
+            table_name = result["table_name"]
+            patterns_dict[table_name] = result["patterns"]
+
+            # Generate quality report
+            try:
+                df = pd.read_excel(result["file"], sheet_name=result["sheet"])
+                quality_report = scorer.generate_quality_report(df, table_name)
+                quality_dict[table_name] = quality_report
+            except Exception:
+                # Default quality report if analysis fails
+                quality_dict[table_name] = {
+                    "score": 100,
+                    "grade": "A",
+                    "issues": []
+                }
+
+        # Launch interactive wizard
+        wizard = InteractiveWizard(console)
+        wizard_result = wizard.run_interactive_mode(
+            excel_files,
+            patterns_dict,
+            quality_dict,
+            Path(output_path)
+        )
+
+        # Check if user wants to save configuration
+        if wizard_result.get("action") == "save":
+            # Generate configuration based on user choices
+            output_dir = Path(output_path)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            mappings_file = output_dir / "mappings.json"
+
+            # Build mappings configuration from accepted files
+            mappings_config: Dict[str, Any] = {"mappings": {}}
+
+            for file_data in wizard_result.get("files_data", []):
+                if file_data.get("skipped"):
+                    continue
+
+                file_path_str = file_data["file_path"]
+                file_path = Path(file_path_str)
+                table_name = file_path.stem
+
+                # Get patterns for this file
+                patterns = patterns_dict.get(table_name, {})
+
+                # Build column mappings
+                column_mappings = {}
+                try:
+                    df = pd.read_excel(file_path)
+                    for col in df.columns:
+                        col_type = _infer_sql_type(df[col])
+                        column_mappings[str(col)] = {
+                            "target": str(col),
+                            "type": col_type,
+                            "required": False,
+                            "default": None,
+                        }
+                except Exception:
+                    pass
+
+                # Build value mappings from accepted transformations
+                value_mappings = []
+                for trans in file_data.get("accepted_transformations", []):
+                    if trans["type"] == "value_mapping":
+                        value_mappings.append({
+                            "column": trans["column"],
+                            "mappings": trans.get("mappings", {}),
+                        })
+
+                # Build validation rules
+                validation_rules = []
+                pk = patterns.get("primary_key")
+                if pk:
+                    validation_rules.append({
+                        "column": pk,
+                        "type": "unique",
+                        "params": {},
+                        "message": f"{pk} must be unique",
+                        "severity": "error",
+                    })
+
+                # Build reference validations
+                reference_validations = []
+                for fk in patterns.get("foreign_keys", []):
+                    reference_validations.append({
+                        "column": fk["column"],
+                        "reference_table": fk["ref_table"],
+                        "reference_column": fk.get("ref_column", "id"),
+                    })
+
+                # Build metadata
+                metadata = {
+                    "row_count": len(pd.read_excel(file_path)),
+                    "column_count": len(pd.read_excel(file_path).columns),
+                    "detection_confidence": patterns.get("confidence", 0.0),
+                    "auto_generated": True,
+                    "interactive_mode": True,
+                    "primary_key_detected": pk is not None,
+                    "has_value_mappings": len(value_mappings) > 0,
+                    "has_foreign_keys": len(reference_validations) > 0,
+                }
+
+                # Build complete type mapping
+                type_mapping = {
+                    "target_table": table_name,
+                    "primary_key": [pk] if pk else [],
+                    "column_mappings": column_mappings,
+                    "value_mappings": value_mappings,
+                    "calculated_columns": [],
+                    "validation_rules": validation_rules,
+                    "reference_validations": reference_validations,
+                    "hooks": [],
+                    "tags": ["auto-generated", "interactive"],
+                    "metadata": metadata,
+                }
+
+                mappings_config["mappings"][table_name] = type_mapping
+
+            # Save to file
+            import json
+            with open(mappings_file, "w", encoding="utf-8") as f:
+                json.dump(mappings_config, f, indent=2, ensure_ascii=False)
+
+            # Display success message
+            console.print("")
+            console.print("[bold green]Configuration saved successfully![/bold green]")
+            console.print(f"  Location: [cyan]{mappings_file}[/cyan]")
+
+        return  # Exit interactive mode
 
     # Display results in file cards
     console.print("")
