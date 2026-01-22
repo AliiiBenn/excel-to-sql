@@ -457,6 +457,12 @@ def magic(
     from pathlib import Path
     from typing import Dict, Any, List
     from openpyxl import load_workbook
+    from rich.panel import Panel
+    from rich.progress import Progress, BarColumn, TextColumn
+    from rich.text import Text
+    from rich.table import Table
+    from rich.live import Live
+    from rich.align import Align
 
     # Import PatternDetector
     try:
@@ -466,8 +472,19 @@ def magic(
         console.print("[dim]This feature requires the auto_pilot module[/dim]")
         raise Exit(1)
 
-    console.print("[bold cyan]Auto-Pilot Mode[/bold cyan]")
-    console.print("[dim]Analyzing Excel files and detecting patterns...[/dim]")
+    # Display styled header
+    header_text = Text("AUTO-PILOT MODE", style="bold cyan")
+    version_info = Text("Intelligent Excel to SQLite Configuration", style="dim")
+
+    header = Panel(
+        Text.assemble(
+            header_text, "\n", version_info
+        ),
+        title="excel-to-sql",
+        border_style="cyan",
+        padding=(1, 2),
+    )
+    console.print(header)
     console.print("")
 
     # Initialize detector
@@ -486,106 +503,133 @@ def magic(
         console.print("[dim]Place .xlsx or .xls files in the directory and try again[/dim]")
         raise Exit(1)
 
-    console.print(f"[green]OK[/green] Found {len(excel_files)} Excel file(s)")
+    # Display files found panel
+    files_panel = Panel(
+        f"Found [bold green]{len(excel_files)}[/bold green] Excel file(s) in [cyan]{data_path}[/cyan]",
+        title="Files Discovered",
+        border_style="green",
+        padding=(0, 1),
+    )
+    console.print(files_panel)
     console.print("")
 
-    # Analyze each file
+    # Process with progress bar
     all_results: Dict[str, Any] = {}
-    total_sheets = 0
 
-    for excel_file in excel_files:
-        console.print(f"[bold cyan]Processing:[/bold cyan] {excel_file.name}")
+    with console.status("[bold]Analyzing Excel files...", spinner="dots") as status:
+        for excel_file in excel_files:
+            status.update(f"Processing {excel_file.name}...")
 
-        try:
-            # Load workbook to get sheet names
-            wb = load_workbook(excel_file, read_only=True)
-            sheet_names = wb.sheetnames
-            wb.close()
+            try:
+                # Load workbook to get sheet names
+                wb = load_workbook(excel_file, read_only=True)
+                sheet_names = wb.sheetnames
+                wb.close()
 
-            total_sheets += len(sheet_names)
-            console.print(f"  Sheets: {', '.join(sheet_names)}")
+                for sheet_name in sheet_names:
+                    try:
+                        # Read sheet
+                        df = pd.read_excel(excel_file, sheet_name=sheet_name)
+                        table_name = excel_file.stem.lower()
 
-            # Analyze each sheet
-            for sheet_name in sheet_names:
-                from rich.text import Text
-                console.print(Text(f"  {sheet_name}...", style="dim"), end=" ")
+                        # Skip empty sheets
+                        if len(df) == 0:
+                            continue
 
-                try:
-                    # Read sheet
-                    df = pd.read_excel(excel_file, sheet_name=sheet_name)
-                    # Use filename (without extension) as table name
-                    table_name = excel_file.stem.lower()
+                        # Detect patterns
+                        patterns = detector.detect_patterns(df, table_name)
+                        all_results[f"{excel_file.stem}/{sheet_name}"] = {
+                            "file": str(excel_file),
+                            "sheet": sheet_name,
+                            "table_name": table_name,
+                            "patterns": patterns,
+                            "row_count": len(df),
+                            "column_count": len(df.columns),
+                        }
 
-                    # Skip empty sheets
-                    if len(df) == 0:
-                        console.print(" [yellow]skipped (empty)[/yellow]")
-                        continue
+                    except Exception as e:
+                        console.print(f"  [red]Error analyzing {sheet_name}:[/red] {e}")
 
-                    # Detect patterns
-                    patterns = detector.detect_patterns(df, table_name)
-                    all_results[f"{excel_file.stem}/{sheet_name}"] = {
-                        "file": str(excel_file),
-                        "sheet": sheet_name,
-                        "table_name": table_name,
-                        "patterns": patterns,
-                        "row_count": len(df),
-                        "column_count": len(df.columns),
-                    }
+            except Exception as e:
+                console.print(f"[red]Error processing {excel_file.name}:[/red] {e}")
 
-                    # Display results
-                    pk = patterns.get("primary_key")
-                    if pk:
-                        console.print(f" [green]OK[/green] PK: {pk}")
-                    else:
-                        console.print(" [yellow]![/yellow] No PK detected")
+    # Display results in file cards
+    console.print("")
+    console.print("[bold cyan]Detection Results[/bold cyan]")
+    console.print("")
 
-                    if patterns.get("value_mappings"):
-                        console.print(f"    [dim]Value mappings:[/dim] {len(patterns['value_mappings'])} column(s)")
+    for key, result in sorted(all_results.items()):
+        patterns = result["patterns"]
+        pk = patterns.get("primary_key")
 
-                    if patterns.get("foreign_keys"):
-                        console.print(f"    [dim]Foreign keys:[/dim] {len(patterns['foreign_keys'])} found")
+        # Create file card
+        file_info = Text.assemble(
+            f"[bold cyan]{result['table_name'].title()}[/bold cyan]\n",
+            f"File: [dim]{result['file']}[/dim]\n",
+            f"Sheet: [cyan]{result['sheet']}[/cyan]\n",
+            f"Rows: [green]{result['row_count']:,}[/green]   ",
+            f"Cols: [blue]{result['column_count']}[/blue]\n"
+        )
 
-                    if patterns.get("split_fields"):
-                        console.print(f"    [dim]Split fields:[/dim] {len(patterns['split_fields'])} column(s)")
+        if pk:
+            file_info += f"PK: [bold green]{pk}[/bold green]\n"
+        else:
+            file_info += f"PK: [yellow]Not detected[/yellow]\n"
 
-                except Exception as e:
-                    console.print(f" [red]X[/red] Error: {e}")
+        if patterns.get("value_mappings"):
+            mappings_text = ", ".join(patterns["value_mappings"].keys())
+            file_info += f"Value Maps: [green]{mappings_text}[/green]\n"
 
-        except Exception as e:
-            console.print(f"  [red]Error:[/red] {e}")
+        if patterns.get("foreign_keys"):
+            fk_text = ", ".join([f"{fk['column']}->{fk['ref_table']}" for fk in patterns["foreign_keys"]])
+            file_info += f"Foreign Keys: [cyan]{fk_text}[/cyan]\n"
 
+        if patterns.get("split_fields"):
+            split_text = ", ".join(patterns["split_fields"])
+            file_info += f"Split Fields: [yellow]{split_text}[/yellow]\n"
+
+        file_info += f"Confidence: [bold]{patterns['confidence']:.0%}[/bold]"
+
+        file_card = Panel(
+            file_info,
+            border_style="blue",
+            padding=(0, 2),
+            title_align="left",
+        )
+        console.print(file_card)
         console.print("")
 
     # Display summary table
     if all_results:
-        console.print("[bold cyan]Detection Summary[/bold cyan]")
+        summary_title = Text.assemble(
+            "[bold cyan]DETECTION SUMMARY[/bold cyan]\n",
+            f"[dim]{len(all_results)} table(s) analyzed[/dim]"
+        )
+        console.print(Panel(summary_title, border_style="cyan", padding=(0, 1)))
         console.print("")
 
-        table = Table(show_header=True, header_style="bold cyan")
-        table.add_column("Table", style="cyan")
-        table.add_column("Rows", justify="right")
-        table.add_column("PK", style="green")
-        table.add_column("Value Mappings", justify="center")
-        table.add_column("FKs", justify="center")
-        table.add_column("Split Fields", justify="center")
-        table.add_column("Confidence", justify="right")
+        table = Table(show_header=True, header_style="bold cyan", title_style="cyan", show_lines=True)
+        table.add_column("Table", style="cyan", width=20)
+        table.add_column("Rows", justify="right", style="green")
+        table.add_column("Primary Key", style="bold green", width=15)
+        table.add_column("Value Maps", justify="center", width=12)
+        table.add_column("FKs", justify="center", width=8)
+        table.add_column("Score", justify="right", width=8)
 
         for key, result in sorted(all_results.items()):
             patterns = result["patterns"]
-            pk = patterns.get("primary_key") or "-"
-            value_maps = "OK" if patterns.get("value_mappings") else "-"
+            pk = patterns.get("primary_key") or "[dim]-[/dim]"
+            value_maps = "[green]OK[/green]" if patterns.get("value_mappings") else "-"
             fks = str(len(patterns.get("foreign_keys", []))) if patterns.get("foreign_keys") else "-"
-            split = "OK" if patterns.get("split_fields") else "-"
-            confidence = f"{patterns.get('confidence', 0):.0%}"
+            score = f"[cyan]{patterns.get('confidence', 0):.0%}[/cyan]"
 
             table.add_row(
                 result["table_name"],
-                str(result["row_count"]),
+                f"{result['row_count']:,}",
                 pk,
                 value_maps,
                 fks,
-                split,
-                confidence,
+                score,
             )
 
         console.print(table)
@@ -598,110 +642,127 @@ def magic(
 
         mappings_file = output_dir / "mappings.json"
 
-        console.print("[bold cyan]Generating Configuration[/bold cyan]")
-        console.print(f"  Output: {mappings_file}")
+        # Show generation progress
+        with console.status("[bold]Generating configuration...", spinner="dots2") as status:
+            status.update("Building mappings structure...")
+
+            # Build mappings configuration
+            mappings_config: Dict[str, Any] = {"mappings": {}}
+
+            for key, result in all_results.items():
+                patterns = result["patterns"]
+                table_name = result["table_name"]
+
+                # Build column mappings
+                column_mappings = {}
+                try:
+                    df = pd.read_excel(result["file"], sheet_name=result["sheet"])
+                    for col in df.columns:
+                        col_type = _infer_sql_type(df[col])
+                        column_mappings[str(col)] = {
+                            "target": str(col),
+                            "type": col_type,
+                            "required": False,
+                            "default": None,
+                        }
+                except Exception:
+                    pass
+
+                # Build value mappings
+                value_mappings = []
+                for col, mappings in patterns.get("value_mappings", {}).items():
+                    value_mappings.append({
+                        "column": col,
+                        "mappings": mappings,
+                    })
+
+                # Build validation rules
+                validation_rules = []
+                pk = patterns.get("primary_key")
+                if pk:
+                    validation_rules.append({
+                        "column": pk,
+                        "type": "unique",
+                        "params": {},
+                        "message": f"{pk} must be unique",
+                        "severity": "error",
+                    })
+
+                # Build reference validations
+                reference_validations = []
+                for fk in patterns.get("foreign_keys", []):
+                    reference_validations.append({
+                        "column": fk["column"],
+                        "reference_table": fk["ref_table"],
+                        "reference_column": fk.get("ref_column", "id"),
+                    })
+
+                # Build metadata
+                metadata = {
+                    "row_count": result["row_count"],
+                    "column_count": result["column_count"],
+                    "detection_confidence": patterns.get("confidence", 0.0),
+                    "auto_generated": True,
+                    "primary_key_detected": pk is not None,
+                    "has_value_mappings": len(value_mappings) > 0,
+                    "has_foreign_keys": len(reference_validations) > 0,
+                    "has_split_fields": patterns.get("split_fields") is not None,
+                }
+
+                # Build complete type mapping
+                type_mapping = {
+                    "target_table": table_name,
+                    "primary_key": [pk] if pk else [],
+                    "column_mappings": column_mappings,
+                    "value_mappings": value_mappings,
+                    "calculated_columns": [],
+                    "validation_rules": validation_rules,
+                    "reference_validations": reference_validations,
+                    "hooks": [],
+                    "tags": ["auto-generated"],
+                    "metadata": metadata,
+                }
+
+                mappings_config["mappings"][table_name] = type_mapping
+
+            status.update(f"Saving to {mappings_file}...")
+
+            # Save to file
+            import json
+            with open(mappings_file, "w", encoding="utf-8") as f:
+                json.dump(mappings_config, f, indent=2, ensure_ascii=False)
+
+        # Display success panel
+        success_panel = Panel(
+            Text.assemble(
+                "[bold green]Configuration generated successfully![/bold green]\n\n",
+                f"Location: [cyan]{mappings_file}[/cyan]\n",
+                f"Tables: [green]{len(mappings_config['mappings'])}[/green]\n",
+                f"Total Rows: [green]{sum(r['row_count'] for r in all_results.values()):,}[/green]\n"
+            ),
+            title="OK SUCCESS",
+            border_style="green",
+            padding=(1, 2),
+        )
+        console.print(success_panel)
         console.print("")
-
-        # Build mappings configuration
-        mappings_config: Dict[str, Any] = {"mappings": {}}
-
-        for key, result in all_results.items():
-            patterns = result["patterns"]
-            table_name = result["table_name"]
-
-            # Build column mappings
-            column_mappings = {}
-            # Note: We need to read the file again to get column info
-            # For now, create basic structure
-            try:
-                df = pd.read_excel(result["file"], sheet_name=result["sheet"])
-                for col in df.columns:
-                    col_type = _infer_sql_type(df[col])
-                    column_mappings[str(col)] = {
-                        "target": str(col),
-                        "type": col_type,
-                        "required": False,
-                        "default": None,
-                    }
-            except Exception:
-                pass
-
-            # Build value mappings
-            value_mappings = []
-            for col, mappings in patterns.get("value_mappings", {}).items():
-                value_mappings.append({
-                    "column": col,
-                    "mappings": mappings,
-                })
-
-            # Build validation rules
-            validation_rules = []
-            pk = patterns.get("primary_key")
-            if pk:
-                validation_rules.append({
-                    "column": pk,
-                    "type": "unique",
-                    "params": {},
-                    "message": f"{pk} must be unique",
-                    "severity": "error",
-                })
-
-            # Build reference validations
-            reference_validations = []
-            for fk in patterns.get("foreign_keys", []):
-                reference_validations.append({
-                    "column": fk["column"],
-                    "reference_table": fk["ref_table"],
-                    "reference_column": fk.get("ref_column", "id"),
-                })
-
-            # Build metadata
-            metadata = {
-                "row_count": result["row_count"],
-                "column_count": result["column_count"],
-                "detection_confidence": patterns.get("confidence", 0.0),
-                "auto_generated": True,
-                "primary_key_detected": pk is not None,
-                "has_value_mappings": len(value_mappings) > 0,
-                "has_foreign_keys": len(reference_validations) > 0,
-                "has_split_fields": patterns.get("split_fields") is not None,
-            }
-
-            # Build complete type mapping
-            type_mapping = {
-                "target_table": table_name,
-                "primary_key": [pk] if pk else [],
-                "column_mappings": column_mappings,
-                "value_mappings": value_mappings,
-                "calculated_columns": [],
-                "validation_rules": validation_rules,
-                "reference_validations": reference_validations,
-                "hooks": [],
-                "tags": ["auto-generated"],
-                "metadata": metadata,
-            }
-
-            mappings_config["mappings"][table_name] = type_mapping
-
-        # Save to file
-        import json
-        with open(mappings_file, "w", encoding="utf-8") as f:
-            json.dump(mappings_config, f, indent=2, ensure_ascii=False)
-
-        console.print(f"[green]OK[/green] Configuration saved to {mappings_file}")
-        console.print("")
-        console.print(f"[dim]Tables configured: {len(mappings_config['mappings'])}[/dim]")
         console.print("[dim]Next steps:[/dim]")
-        console.print(f"  1. Review the generated configuration")
-        console.print(f"  2. Run: [cyan]excel-to-sql import --file <file> --type <table>[/cyan]")
+        console.print("  1. Review the generated configuration")
+        console.print("  2. Run: [cyan]excel-to-sql import --file <file> --type <table>[/cyan]")
         console.print("")
 
     elif dry_run:
-        console.print("[yellow]! Dry-run mode:[/yellow] Configuration not generated")
-        console.print("  Omit --dry-run to generate configuration files")
+        dry_panel = Panel(
+            "[bold yellow]Dry-Run Mode[/bold yellow]\n\nConfiguration was analyzed but not generated.\n\nOmit [cyan]--dry-run[/cyan] to generate configuration files.",
+            title="!",
+            border_style="yellow",
+            padding=(1, 2),
+        )
+        console.print(dry_panel)
         console.print("")
 
-    console.print("[bold green]OK Auto-Pilot Complete![/bold green]")
+    # Final completion message
+    console.print("[bold green]Auto-Pilot Analysis Complete![/bold green]")
 
 
 def _infer_sql_type(series) -> str:
