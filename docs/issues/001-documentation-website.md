@@ -1,12 +1,6 @@
-# Issue: Add Documentation Website with Fumadocs
+# Add Documentation Website with Fumadocs
 
-**Priority:** Medium
-**Complexity:** Medium
-**Type:** Documentation
-**Target Version:** v0.4.0 or later
-**Estimated Time:** 2-3 days
-
-## 📋 Context
+## Context
 
 The excel-to-sql project has grown significantly with v0.3.0, introducing the Auto-Pilot Mode with 8 major features and 5 new components. The README is now 700+ lines and becoming difficult to navigate efficiently.
 
