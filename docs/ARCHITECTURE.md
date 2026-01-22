@@ -744,7 +744,7 @@ def temp_project():
 
 **1. Development Installation**
 ```bash
-git clone https://github.com/davidfrancoeur/excel-to-sql
+git clone https://github.com/wareflowx/excel-to-sql
 cd excel-to-sql
 pip install -e .
 ```

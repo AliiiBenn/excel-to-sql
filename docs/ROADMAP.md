@@ -697,9 +697,9 @@ For each sprint to be considered "done":
 
 ### Resources
 
-- **Repository:** https://github.com/davidfrancoeur/excel-to-sql
-- **Issues:** https://github.com/davidfrancoeur/excel-to-sql/issues
-- **Documentation:** https://github.com/davidfrancoeur/excel-to-sql/wiki
+- **Repository:** https://github.com/wareflowx/excel-to-sql
+- **Issues:** https://github.com/wareflowx/excel-to-sql/issues
+- **Documentation:** https://github.com/wareflowx/excel-to-sql/wiki
 
 ---
 
