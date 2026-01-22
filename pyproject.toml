@@ -1,6 +1,6 @@
 [project]
 name = "excel-to-sql"
-version = "0.2.0"
+version = "0.3.0"
 description = "CLI tool and Python SDK for importing Excel files to SQLite with advanced transformations and validation"
 readme = "README.md"
 requires-python = ">=3.10"
