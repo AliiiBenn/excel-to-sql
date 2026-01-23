@@ -5,7 +5,7 @@ Encapsulates file I/O and content-based hashing for incremental imports.
 """
 
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Literal
 
 import pandas as pd
 import hashlib
@@ -64,12 +64,18 @@ class ExcelFile:
     # PUBLIC METHODS
     # ──────────────────────────────────────────────────────────────
 
-    def read(self, sheet_name: str | None = None) -> pd.DataFrame:
+    def read(
+        self,
+        sheet_name: str | None = None,
+        header: int | None | Literal["detect"] = 0
+    ) -> pd.DataFrame:
         """
         Read Excel file as DataFrame.
 
         Args:
             sheet_name: Sheet to read (default: first sheet)
+            header: Row to use as header (0-based). Use "detect" for automatic
+                    header detection. None means no header. (default: 0)
 
         Returns:
             Pandas DataFrame with raw data
@@ -88,7 +94,15 @@ class ExcelFile:
             # Use sheet_name=0 to read first sheet when None specified
             # (pd.read_excel returns dict when sheet_name=None)
             actual_sheet = 0 if sheet_name is None else sheet_name
-            return pd.read_excel(self._path, sheet_name=actual_sheet, engine="openpyxl")
+
+            # Handle automatic header detection
+            if header == "detect":
+                from excel_to_sql.auto_pilot.header_detector import HeaderDetector
+                detector = HeaderDetector()
+                header_row = detector.detect_header_row(self._path, actual_sheet)
+                return pd.read_excel(self._path, sheet_name=actual_sheet, header=header_row, engine="openpyxl")
+
+            return pd.read_excel(self._path, sheet_name=actual_sheet, header=header, engine="openpyxl")
         except Exception as e:
             raise ValueError(f"Failed to read Excel file: {e}") from e
 
