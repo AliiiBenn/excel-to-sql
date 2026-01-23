@@ -468,6 +468,7 @@ def magic(
     # Import Auto-Pilot components
     try:
         from excel_to_sql.auto_pilot.detector import PatternDetector
+        from excel_to_sql.auto_pilot.header_detector import HeaderDetector
         from excel_to_sql.auto_pilot.quality import QualityScorer
         from excel_to_sql.ui.interactive import InteractiveWizard
     except ImportError as e:
@@ -490,8 +491,9 @@ def magic(
     console.print(header)
     console.print("")
 
-    # Initialize detector
+    # Initialize detectors
     detector = PatternDetector()
+    header_detector = HeaderDetector()
 
     # Find Excel files
     data_dir = Path(data_path)
@@ -531,8 +533,8 @@ def magic(
 
                 for sheet_name in sheet_names:
                     try:
-                        # Read sheet
-                        df = pd.read_excel(excel_file, sheet_name=sheet_name)
+                        # Read sheet with automatic header detection
+                        df = header_detector.read_excel_with_header_detection(excel_file, sheet_name)
                         table_name = excel_file.stem.lower()
 
                         # Skip empty sheets
@@ -575,7 +577,7 @@ def magic(
 
             # Generate quality report
             try:
-                df = pd.read_excel(result["file"], sheet_name=result["sheet"])
+                df = header_detector.read_excel_with_header_detection(result["file"], result["sheet"])
                 quality_report = scorer.generate_quality_report(df, table_name)
                 quality_dict[table_name] = quality_report
             except Exception:
@@ -619,7 +621,7 @@ def magic(
                 # Build column mappings
                 column_mappings = {}
                 try:
-                    df = pd.read_excel(file_path)
+                    df = header_detector.read_excel_with_header_detection(file_path)
                     for col in df.columns:
                         col_type = _infer_sql_type(df[col])
                         column_mappings[str(col)] = {
@@ -804,7 +806,7 @@ def magic(
                 # Build column mappings
                 column_mappings = {}
                 try:
-                    df = pd.read_excel(result["file"], sheet_name=result["sheet"])
+                    df = header_detector.read_excel_with_header_detection(result["file"], result["sheet"])
                     for col in df.columns:
                         col_type = _infer_sql_type(df[col])
                         column_mappings[str(col)] = {
