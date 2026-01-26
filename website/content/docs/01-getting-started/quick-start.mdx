@@ -1,0 +1,399 @@
+---
+title: Quick Start
+description: Import your first Excel file in 5 minutes
+sidebar:
+  order: 3
+---
+
+import { Steps } from 'fumadocs-ui/components/steps';
+import { Tabs, TabContent } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Quick Start
+
+Get your first Excel file imported into SQLite in under 5 minutes!
+
+## Choose Your Path
+
+excel-to-sql offers two ways to get started:
+
+<Tabs items={['Auto-Pilot Mode (Recommended)', 'Manual Configuration']}>
+
+  <TabContent value="Auto-Pilot Mode (Recommended)">
+
+    ### Auto-Pilot Mode: Zero Configuration
+
+    Auto-Pilot automatically detects patterns and generates configuration for you.
+
+    <Steps>
+
+      <Step>
+
+        **Prepare Your Excel File**
+
+        Ensure you have an Excel file (`.xlsx` or `.xls`) ready. For example, a file named `products.xlsx` with a sheet containing product data.
+
+      </Step>
+
+      <Step>
+
+        **Run Auto-Pilot**
+
+        ```bash
+        cd /path/to/your/excel/files
+        excel-to-sql magic --data . --interactive
+        ```
+
+        This analyzes all Excel files in the current directory and launches the interactive wizard.
+
+      </Step>
+
+      <Step>
+
+        **Review Suggestions**
+
+        Auto-Pilot will show you:
+        - Detected primary keys
+        - Suggested value mappings
+        - Quality issues found
+        - Recommended data types
+
+        Accept or modify each suggestion.
+
+      </Step>
+
+      <Step>
+
+        **Generate Configuration**
+
+        Auto-Pilot creates `.excel-to-sql/` directory with:
+        - `mappings.json` - Type configurations
+        - Database setup
+
+      </Step>
+
+      <Step>
+
+        **Import Your Data**
+
+        ```bash
+        excel-to-sql import --file products.xlsx --type products
+        ```
+
+        Watch as your data is imported with real-time progress!
+
+      </Step>
+
+      <Step>
+
+        **Query Your Data**
+
+        ```bash
+        excel-to-sql export --table products --output products_export.xlsx
+        ```
+
+        Export data back to Excel to verify everything worked.
+
+      </Step>
+
+    </Steps>
+
+    <Callout type="tip">
+      **Pro Tip**: Use `--dry-run` flag to analyze without generating configuration:
+      ```bash
+      excel-to-sql magic --data . --dry-run
+      ```
+    </Callout>
+
+  </TabContent>
+
+  <TabContent value="Manual Configuration">
+
+    ### Manual Configuration: Full Control
+
+    For complete control over the import process.
+
+    <Steps>
+
+      <Step>
+
+        **Initialize Project**
+
+        ```bash
+        mkdir my-project
+        cd my-project
+        excel-to-sql init
+        ```
+
+        This creates:
+        - `data/` - SQLite database location
+        - `config/` - Configuration files
+        - `imports/` - Imported Excel files
+        - `exports/` - Exported Excel files
+
+      </Step>
+
+      <Step>
+
+        **Add Type Configuration**
+
+        ```bash
+        excel-to-sql config add --type products --table products --pk id
+        ```
+
+        This creates a basic configuration for a "products" type with "id" as primary key.
+
+      </Step>
+
+      <Step>
+
+        **Import Your Excel File**
+
+        ```bash
+        excel-to-sql import --file products.xlsx --type products
+        ```
+
+        The file `products.xlsx` should be in your current directory or provide the full path.
+
+      </Step>
+
+      <Step>
+
+        **View Import History**
+
+        ```bash
+        excel-to-sql status
+        ```
+
+        See all your imports with timestamps and row counts.
+
+      </Step>
+
+      <Step>
+
+        **Export Data Back to Excel**
+
+        ```bash
+        excel-to-sql export --table products --output products_export.xlsx
+        ```
+
+        Your data is now in `exports/products_export.xlsx`
+
+      </Step>
+
+    </Steps>
+
+  </TabContent>
+
+</Tabs>
+
+## Working Example: Importing a Product Catalog
+
+Let's walk through a complete example with a sample products file.
+
+### Sample Excel File Structure
+
+Imagine you have `products.xlsx` with these columns:
+
+| ID | Name | Category | Price | Status | Stock |
+|----|------|----------|-------|--------|-------|
+| 1 | Widget A | Electronics | 29.99 | 1 | 100 |
+| 2 | Gadget B | Electronics | 49.99 | 1 | 50 |
+| 3 | Tool C | Hardware | 19.99 | 0 | 0 |
+
+### Step-by-Step Import
+
+#### 1. Initialize Project
+
+```bash
+mkdir product-catalog
+cd product-catalog
+excel-to-sql init
+```
+
+Output:
+```
+✓ Created project structure
+✓ Initialized database at data/database.db
+```
+
+#### 2. Add Configuration
+
+```bash
+excel-to-sql config add --type products --table products --pk ID
+```
+
+This creates `config/mappings.json`:
+```json
+{
+  "products": {
+    "target_table": "products",
+    "primary_key": ["ID"],
+    "column_mappings": {
+      "ID": {"target": "id", "type": "integer"},
+      "Name": {"target": "name", "type": "string"},
+      "Category": {"target": "category", "type": "string"},
+      "Price": {"target": "price", "type": "float"},
+      "Status": {"target": "status", "type": "integer"},
+      "Stock": {"target": "stock", "type": "integer"}
+    }
+  }
+}
+```
+
+#### 3. Import Data
+
+```bash
+excel-to-sql import --file products.xlsx --type products
+```
+
+Output:
+```
+✓ Loading Excel file: products.xlsx
+✓ Found sheet: Sheet1
+✓ Importing 3 rows into table 'products'
+✓ Import completed in 0.15s
+```
+
+#### 4. Verify Import
+
+```bash
+excel-to-sql status
+```
+
+Output:
+```
+Import History:
+┌──────────────┬──────────┬────────┬─────────┐
+│ Date         │ Type     │ Rows   │ File    │
+├──────────────┼──────────┼────────┼─────────┤
+│ 2025-01-26   │ products │ 3      │ product │
+└──────────────┴──────────┴────────┴─────────┘
+```
+
+#### 5. Export to Verify
+
+```bash
+excel-to-sql export --table products --output products_export.xlsx
+```
+
+Check the exported file to confirm your data is correctly imported!
+
+## Common First Tasks
+
+### Add Value Mapping
+
+Transform codes during import:
+
+```bash
+excel-to-sql config add --type products --table products --pk id
+# Then edit config/mappings.json to add:
+{
+  "value_mappings": [
+    {
+      "column": "status",
+      "mappings": {"1": "In Stock", "0": "Out of Stock"}
+    }
+  ]
+}
+```
+
+### Profile Data Quality
+
+Generate a quality report:
+
+```bash
+excel-to-sql profile --table products --output quality_report.html
+```
+
+Open `quality_report.html` in your browser to see:
+- Quality score (0-100)
+- Data type analysis
+- Null value percentages
+- Value distributions
+- Issues and recommendations
+
+## Python SDK Quick Start
+
+Prefer Python over CLI? Here's how to use the SDK:
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+# Initialize SDK
+sdk = ExcelToSqlite()
+
+# Import Excel file
+result = sdk.import_excel(
+    file_path="products.xlsx",
+    type_name="products",
+    tags=["catalog", "2025"]
+)
+
+print(f"Imported {result['rows_imported']} rows")
+
+# Query data
+df = sdk.query("SELECT * FROM products WHERE price > 20")
+print(df)
+
+# Export to Excel
+sdk.export_to_excel(
+    output="report.xlsx",
+    sheet_mapping={
+        "Products": "products"
+    }
+)
+
+# Profile quality
+profile = sdk.profile_table("products")
+print(f"Quality Score: {profile['summary']['quality_score']}/100")
+```
+
+<Callout type="info">
+  The Python SDK provides the same functionality as the CLI with programmatic access.
+  See [Python SDK](/docs/python-sdk) for more details.
+</Callout>
+
+## What's Next?
+
+Congratulations! You've successfully imported your first Excel file. Here's what you can do next:
+
+- **[Auto-Pilot Mode](/docs/auto-pilot)** - Learn advanced automatic configuration
+- **[CLI Reference](/docs/cli-reference)** - Explore all available commands
+- **[Transformations](/docs/python-sdk/transformations)** - Add value mappings and calculated columns
+- **[Validation](/docs/python-sdk/validators)** - Ensure data integrity
+- **[Examples](/docs/examples)** - Real-world usage examples
+
+## Troubleshooting
+
+### "File not found" error
+
+Ensure your Excel file path is correct:
+```bash
+# Use absolute path
+excel-to-sql import --file /full/path/to/products.xlsx --type products
+
+# Or relative path from current directory
+excel-to-sql import --file ./data/products.xlsx --type products
+```
+
+### "Type configuration not found"
+
+You need to create a type configuration first:
+```bash
+excel-to-sql config add --type products --table products --pk id
+```
+
+### Import seems slow
+
+Large files may take time. Use `--force` only if needed:
+```bash
+excel-to-sql import --file large_file.xlsx --type products --force
+```
+
+### View detailed error messages
+
+Add verbose mode:
+```bash
+excel-to-sql --verbose import --file products.xlsx --type products
+```
