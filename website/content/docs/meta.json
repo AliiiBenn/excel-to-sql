@@ -2,8 +2,8 @@
   "pages": [
     "index",
     "---Introduction---",
-    "introduction/what-is-ets",
     "introduction/quick-start",
+    "introduction/what-is-ets",
     "introduction/installation",
     "---CLI Reference---",
     "cli-reference/config",
