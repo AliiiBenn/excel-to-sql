@@ -6,7 +6,7 @@ sidebar:
 ---
 
 import { Steps, Step } from 'fumadocs-ui/components/steps';
-import { Tabs, TabContent } from 'fumadocs-ui/components/tabs';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 import { Callout } from 'fumadocs-ui/components/callout';
 
 # Quick Start
@@ -19,7 +19,7 @@ excel-to-sql offers two ways to get started:
 
 <Tabs items={['Auto-Pilot Mode (Recommended)', 'Manual Configuration']}>
 
-  <Tabs.Content value="Auto-Pilot Mode (Recommended)">
+  <Tab value="Auto-Pilot Mode (Recommended)">
 
     ### Auto-Pilot Mode: Zero Configuration
 
@@ -105,9 +105,9 @@ excel-to-sql offers two ways to get started:
       ```
     </Callout>
 
-  </Tabs.Content>
+  </Tab>
 
-  <Tabs.Content value="Manual Configuration">
+  <Tab value="Manual Configuration">
 
     ### Manual Configuration: Full Control
 
@@ -183,7 +183,7 @@ excel-to-sql offers two ways to get started:
 
     </Steps>
 
-  </Tabs.Content>
+  </Tab>
 
 </Tabs>
 
