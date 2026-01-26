@@ -6,23 +6,24 @@ sidebar:
 ---
 
 import { Cards, Card } from 'fumadocs-ui/components/card';
+import { BookOpen, Terminal, Zap, Code, Lightbulb } from 'lucide-react';
 
 # Welcome to excel-to-sql Documentation
 
 <Cards>
-  <Card title="Getting Started" href="/docs/getting-started" icon="book-open">
+  <Card title="Getting Started" href="/docs/getting-started" icon={<BookOpen />}>
     Quick start guide and installation instructions
   </Card>
-  <Card title="CLI Reference" href="/docs/cli-reference" icon="terminal">
+  <Card title="CLI Reference" href="/docs/cli-reference" icon={<Terminal />}>
     Complete command-line interface documentation
   </Card>
-  <Card title="Auto-Pilot Mode" href="/docs/auto-pilot" icon="zap">
+  <Card title="Auto-Pilot Mode" href="/docs/auto-pilot" icon={<Zap />}>
     Zero-configuration import with pattern detection
   </Card>
-  <Card title="Python SDK" href="/docs/python-sdk" icon="code">
+  <Card title="Python SDK" href="/docs/python-sdk" icon={<Code />}>
     Programmatic access and automation
   </Card>
-  <Card title="Examples" href="/docs/examples" icon="lightbulb">
+  <Card title="Examples" href="/docs/examples" icon={<Lightbulb />}>
     Real-world usage examples
   </Card>
 </Cards>
