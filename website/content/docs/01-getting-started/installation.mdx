@@ -6,7 +6,7 @@ sidebar:
 ---
 
 import { Steps, Step } from 'fumadocs-ui/components/steps';
-import { Tabs, TabContent } from 'fumadocs-ui/components/tabs';
+import { Tabs } from 'fumadocs-ui/components/tabs';
 import { Callout } from 'fumadocs-ui/components/callout';
 
 # Installation
@@ -34,7 +34,7 @@ Before installing excel-to-sql, ensure you have:
 
 <Tabs items={['pip', 'uv', 'From Source']}>
 
-  <TabContent value="pip">
+  <Tabs.Content value="pip">
 
     ### Using pip (Recommended)
 
@@ -69,9 +69,9 @@ Before installing excel-to-sql, ensure you have:
     - Automatic dependency resolution
     - Works in virtual environments
 
-  </TabContent>
+  </Tabs.Content>
 
-  <TabContent value="uv">
+  <Tabs.Content value="uv">
 
     ### Using uv (Faster)
 
@@ -111,9 +111,9 @@ Before installing excel-to-sql, ensure you have:
     - Better dependency resolution
     - Compatible with pip workflows
 
-  </TabContent>
+  </Tabs.Content>
 
-  <TabContent value="From Source">
+  <Tabs.Content value="From Source">
 
     ### Installing from Source
 
@@ -162,7 +162,7 @@ Before installing excel-to-sql, ensure you have:
     - Contribute to the project
     - Run tests and examples
 
-  </TabContent>
+  </Tabs.Content>
 </Tabs>
 
 ## System-Specific Notes
