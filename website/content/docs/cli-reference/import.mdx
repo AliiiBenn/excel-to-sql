@@ -15,12 +15,16 @@ excel-to-sql import --file FILE --type TYPE
 
 ## Required Options
 
+These parameters are mandatory for every import operation.
+
 ```bash
 -f, --file TEXT      Path to Excel file (required)
 -t, --type TEXT      Type configuration name (required)
 ```
 
 ## Optional Options
+
+Additional parameters to control import behavior and output verbosity.
 
 ```bash
 --force              Re-import even if content unchanged
@@ -31,11 +35,15 @@ excel-to-sql import --file FILE --type TYPE
 
 ### Basic Import
 
+Import an Excel file using a predefined type configuration.
+
 ```bash
 excel-to-sql import --file products.xlsx --type products
 ```
 
 ### Import with Full Path
+
+Use absolute paths when the Excel file is in a different directory.
 
 ```bash
 excel-to-sql import --file /path/to/data.xlsx --type mytype
@@ -43,11 +51,15 @@ excel-to-sql import --file /path/to/data.xlsx --type mytype
 
 ### Force Re-import
 
+Override the content hash check and re-import the file even if it hasn't changed.
+
 ```bash
 excel-to-sql import --file products.xlsx --type products --force
 ```
 
 ## What Happens During Import
+
+The import process follows a seven-step pipeline to transform and validate your data:
 
 1. **Read Excel File**: Loads using openpyxl
 2. **Apply Column Mappings**: Transform column names and types
@@ -59,6 +71,8 @@ excel-to-sql import --file products.xlsx --type products --force
 
 ## Output
 
+The command provides real-time feedback during the import process.
+
 ```
 ✓ Loading Excel file: products.xlsx
 ✓ Found sheet: Sheet1
@@ -69,6 +83,8 @@ excel-to-sql import --file products.xlsx --type products --force
 ```
 
 ## Import History
+
+Every import is automatically logged. View your complete import history with the status command.
 
 View import history:
 
@@ -100,7 +116,7 @@ excel-to-sql import --file /full/path/to/file.xlsx --type products
 
 ## Incremental Imports
 
-excel-to-sql uses content hashing to detect changes. If the file content hasn't changed, the import is skipped (unless `--force` is used).
+excel-to-sql uses content hashing to detect changes. If the file content hasn't changed, the import is skipped (unless `--force` is used). This intelligent caching saves time on repeated imports of unchanged files.
 
 <Callout type="info">
   **Performance**: Large files (10,000+ rows) may take longer. Use `--force` only when necessary.

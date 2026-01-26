@@ -31,11 +31,15 @@ my-project/
 
 ### Initialize in Current Directory
 
+Run the command in your current working directory to create the project structure right where you are.
+
 ```bash
 excel-to-sql init
 ```
 
 ### Initialize with Custom Location
+
+Create and navigate to a new directory before initializing to keep your project organized in a specific location.
 
 ```bash
 mkdir my-project
@@ -44,6 +48,8 @@ excel-to-sql init
 ```
 
 ## After Initialization
+
+Once your project is initialized, you'll need to configure types and start importing data. Follow these two essential steps:
 
 1. Add a type configuration:
 ```bash
@@ -68,7 +74,7 @@ The `data/database.db` file is created automatically. It contains:
 
 ## Configuration File
 
-`config/mappings.json` stores your type configurations. This file is meant to be edited manually or via the `config` command.
+The `config/mappings.json` file is where you define how your Excel files map to database tables. This file can be edited manually with a text editor or managed programmatically using the `config` command.
 
 ## See Also
 

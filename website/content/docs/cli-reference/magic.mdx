@@ -15,6 +15,8 @@ excel-to-sql magic --data PATH
 
 ## Options
 
+Customize how Auto-Pilot analyzes your data and where it saves the generated configuration.
+
 ```bash
 -d, --data TEXT       Directory containing Excel files (default: current directory)
 -o, --output TEXT     Output directory for config (default: .excel-to-sql)
@@ -26,6 +28,8 @@ excel-to-sql magic --data PATH
 
 ### Basic Auto-Pilot
 
+Analyze all Excel files in the current directory and generate configuration automatically.
+
 ```bash
 cd /path/to/excel/files
 excel-to-sql magic --data .
@@ -33,17 +37,23 @@ excel-to-sql magic --data .
 
 ### Interactive Mode
 
+Step through the analysis process and confirm each detection before adding it to the configuration.
+
 ```bash
 excel-to-sql magic --data ./excels --interactive
 ```
 
 ### Dry Run Analysis
 
+Preview what Auto-Pilot would detect without creating any files. Useful for understanding your data before committing.
+
 ```bash
 excel-to-sql magic --data . --dry-run
 ```
 
 ### Custom Output Directory
+
+Save the generated configuration to a specific directory instead of the default `.excel-to-sql` folder.
 
 ```bash
 excel-to-sql magic --data . --output my-config
@@ -53,7 +63,8 @@ excel-to-sql magic --data . --output my-config
 
 ### 1. Primary Keys
 
-Automatically identifies columns with unique values:
+Automatically identifies columns with unique values that can serve as row identifiers.
+
 ```python
 # Detected: ID column as primary key
 primary_key: ["id"]
@@ -61,7 +72,8 @@ primary_key: ["id"]
 
 ### 2. Foreign Keys
 
-Detects relationships between tables:
+Detects relationships between tables by analyzing column names and value distributions.
+
 ```python
 # Detected: customer_id references customers.id
 foreign_keys: [{
@@ -72,7 +84,8 @@ foreign_keys: [{
 
 ### 3. Value Mappings
 
-Finds code columns requiring translation:
+Finds code columns containing abbreviated values that should be translated to human-readable text.
+
 ```python
 # Detected: Status column with codes 0/1
 value_mappings: [{
@@ -83,7 +96,8 @@ value_mappings: [{
 
 ### 4. Data Types
 
-Infers optimal SQL types:
+Analyzes actual data values to determine the most appropriate SQL data types for each column.
+
 ```python
 # Detected types from data
 column_mappings: {
@@ -96,6 +110,8 @@ column_mappings: {
 
 ### 5. Quality Issues
 
+Scans your data for common quality problems that could affect analysis or reporting accuracy.
+
 Identifies data problems:
 - Null values
 - Duplicates
@@ -103,6 +119,8 @@ Identifies data problems:
 - Outliers
 
 ## Interactive Mode
+
+Interactive mode gives you control over the configuration process by letting you review and approve each detection.
 
 Step-by-step guided configuration:
 
@@ -119,6 +137,8 @@ You'll be prompted to:
 
 ## Output Files
 
+Auto-Pilot creates a comprehensive output directory with analysis results and generated configurations.
+
 Auto-Pilot creates `.excel-to-sql/` directory:
 
 ```
@@ -130,6 +150,8 @@ Auto-Pilot creates `.excel-to-sql/` directory:
 ```
 
 ## Quality Scoring
+
+Auto-Pilot evaluates data quality across four key dimensions and assigns an overall score from 0 to 100.
 
 Auto-Pilot analyzes data quality across dimensions:
 
@@ -148,6 +170,8 @@ Auto-Pilot analyzes data quality across dimensions:
 
 ## Recommendations
 
+Auto-Prioritizes issues based on their impact on data quality and provides actionable fix suggestions.
+
 Auto-Pilot generates prioritized recommendations:
 
 - **HIGH**: Critical issues affecting data integrity
@@ -156,6 +180,8 @@ Auto-Pilot generates prioritized recommendations:
 
 ## Auto-Fix Capabilities
 
+Automatically corrects common data issues without manual intervention.
+
 Auto-Pilot can automatically fix:
 
 - **French Codes**: ENTRÉE→inbound, SORTIE→outbound
@@ -163,6 +189,8 @@ Auto-Pilot can automatically fix:
 - **Split Fields**: Combine redundant columns
 
 ## Dry Run Mode
+
+Test the analysis without creating any files to understand what Auto-Pilot would detect.
 
 Analyze without making changes:
 
@@ -177,6 +205,8 @@ Shows:
 - (No files created)
 
 ## Use Cases
+
+Auto-Pilot excels at rapid prototyping and exploration but may not be suitable for production environments with specialized requirements.
 
 ### Perfect For
 
