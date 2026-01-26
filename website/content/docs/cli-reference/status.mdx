@@ -15,6 +15,8 @@ excel-to-sql status
 
 ## Output
 
+The command displays a formatted table with all imports, sorted by date in descending order (newest first).
+
 ```
 Import History:
 ┌──────────────┬──────────┬────────┬────────────────┬─────────────┐
@@ -31,6 +33,8 @@ Total Rows: 1,900
 
 ## Information Displayed
 
+Each row represents one import operation with key details about what was imported and when.
+
 - **Date**: When the import occurred
 - **Type**: Type configuration used
 - **Rows**: Number of rows imported
@@ -38,6 +42,8 @@ Total Rows: 1,900
 - **Tags**: Import tags (if any)
 
 ## Filters
+
+The CLI doesn't have built-in filtering, but you can query the database directly for more advanced filtering.
 
 ### View Specific Type
 
@@ -58,6 +64,8 @@ LIMIT 10
 ```
 
 ## Metadata Tables
+
+Excel-to-sql creates two internal tables to track import history and application metadata.
 
 excel-to-sql stores metadata in internal tables:
 
@@ -89,6 +97,8 @@ CREATE TABLE __excel_to_sql_metadata (
 
 ### Using SQLite CLI
 
+Open the database directly to run custom SQL queries against the import history.
+
 ```bash
 sqlite3 data/database.db
 ```
@@ -113,6 +123,8 @@ LIMIT 10;
 
 ### Using Python SDK
 
+Programmatic access to import history for custom processing or reporting.
+
 ```python
 from excel_to_sql import ExcelToSqlite
 
@@ -126,6 +138,8 @@ for record in history:
 
 ## Clear History
 
+Delete all import history records from the database. This action cannot be undone.
+
 To clear import history:
 
 ```bash
@@ -137,6 +151,8 @@ sqlite3 data/database.db "DELETE FROM __excel_to_sql_imports"
 </Callout>
 
 ## Statistics
+
+Generate aggregated statistics about your imports to understand trends and patterns.
 
 ### Total Import Statistics
 

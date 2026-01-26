@@ -15,6 +15,8 @@ excel-to-sql config [OPTIONS]
 
 ## Options
 
+Various operations to manage your type configurations throughout their lifecycle.
+
 ```bash
 --add-type TEXT       Add new type configuration
 --table TEXT          Target table name
@@ -30,11 +32,15 @@ excel-to-sql config [OPTIONS]
 
 ### Add New Type
 
+Create a minimal type configuration with just a type name, table name, and primary key.
+
 ```bash
 excel-to-sql config add --type products --table products --pk id
 ```
 
 ### Add with Auto-Detection
+
+Let the command analyze your Excel file and automatically suggest column mappings based on the data.
 
 ```bash
 excel-to-sql config add --type products --table products --pk id --file products.xlsx
@@ -43,6 +49,8 @@ excel-to-sql config add --type products --table products --pk id --file products
 This analyzes the Excel file and suggests column mappings.
 
 ### List All Types
+
+View all configured type mappings in a tabular format.
 
 ```bash
 excel-to-sql config --list
@@ -62,11 +70,15 @@ Configured Types:
 
 ### Show Type Details
 
+Display the complete configuration for a specific type including all column and value mappings.
+
 ```bash
 excel-to-sql config --show products
 ```
 
 ### Remove Type
+
+Delete a type configuration that's no longer needed.
 
 ```bash
 excel-to-sql config --remove old_type
@@ -74,11 +86,15 @@ excel-to-sql config --remove old_type
 
 ### Validate All Configurations
 
+Check all configurations for errors like missing primary keys, duplicate columns, or invalid data types.
+
 ```bash
 excel-to-sql config --validate
 ```
 
 ## Configuration File
+
+All type configurations are stored in a single JSON file that you can edit manually or manage through the command line.
 
 Type configurations are stored in `config/mappings.json`:
 
@@ -103,6 +119,8 @@ Type configurations are stored in `config/mappings.json`:
 
 ## Column Types
 
+Excel-to-sql supports five core SQL data types that cover most use cases.
+
 Supported SQL types:
 
 | Type | Description | Example |
@@ -115,6 +133,8 @@ Supported SQL types:
 
 ## Composite Keys
 
+For tables that require multiple columns to uniquely identify a row, specify them as a comma-separated list.
+
 Multiple column primary keys:
 
 ```bash
@@ -122,6 +142,8 @@ excel-to-sql config add --type order_items --table order_items --pk order_id,pro
 ```
 
 ## Manual Configuration
+
+For complex configurations, you can edit the JSON file directly with any text editor.
 
 You can also edit `config/mappings.json` directly:
 
@@ -137,7 +159,11 @@ excel-to-sql config --validate
 
 ## Common Workflows
 
+Three typical workflows depending on your level of automation preference.
+
 ### Workflow 1: Quick Setup with Auto-Detection
+
+Fastest method for single-table imports with automatic column detection.
 
 ```bash
 # 1. Initialize
@@ -151,6 +177,8 @@ excel-to-sql import --file products.xlsx --type products
 ```
 
 ### Workflow 2: Manual Configuration
+
+Full control over every aspect of the configuration.
 
 ```bash
 # 1. Add basic type
@@ -168,6 +196,8 @@ excel-to-sql import --file products.xlsx --type products
 
 ### Workflow 3: Auto-Pilot (Recommended)
 
+Fully automated configuration generation with intelligent pattern detection.
+
 ```bash
 # Let Auto-Pilot generate everything
 excel-to-sql magic --data . --interactive
@@ -180,6 +210,8 @@ excel-to-sql import --file products.xlsx --type products
 ```
 
 ## Validation Errors
+
+The validate command checks for common configuration mistakes and helps you fix them.
 
 Common validation errors:
 
