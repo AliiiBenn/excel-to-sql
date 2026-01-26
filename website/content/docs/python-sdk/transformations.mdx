@@ -7,9 +7,13 @@ sidebar:
 
 ## Value Mappings
 
+Value mappings transform cell values during import, converting codes and abbreviations into human-readable text.
+
 Transform cell values during import.
 
 ### Basic Value Mapping
+
+Convert numeric or text codes to meaningful values for better data readability.
 
 ```python
 from excel_to_sql import ExcelToSqlite
@@ -30,6 +34,8 @@ result = sdk.import_excel(
 ```
 
 ### Multiple Value Mappings
+
+You can define value mappings for multiple columns in a single import operation.
 
 ```python
 value_mappings = {
@@ -54,6 +60,8 @@ result = sdk.import_excel(
 
 ### French Code Translation
 
+Auto-Pilot automatically detects and can translate French operational codes to English.
+
 Auto-detected by Auto-Pilot, but can be manual:
 
 ```python
@@ -69,9 +77,13 @@ value_mappings = {
 
 ## Calculated Columns
 
+Calculated columns create new fields based on SQL expressions, letting you derive values without modifying your source data.
+
 Create new columns based on SQL expressions.
 
 ### Basic Calculated Column
+
+Derive new values from existing columns using SQL expressions.
 
 ```python
 from excel_to_sql.transformations import CalculatedColumn
@@ -86,6 +98,8 @@ result = sdk.import_excel(
 ```
 
 ### Multiple Calculated Columns
+
+Chain multiple calculations together where later columns can reference earlier ones.
 
 ```python
 calculated_columns = [
@@ -103,6 +117,8 @@ result = sdk.import_excel(
 
 ### String Operations
 
+Use SQL string functions to concatenate, format, and transform text values.
+
 ```python
 calculated_columns = [
     CalculatedColumn("full_name", "first_name || ' ' || last_name"),
@@ -112,6 +128,8 @@ calculated_columns = [
 
 ### Date Operations
 
+Perform date calculations and create boolean flags based on date conditions.
+
 ```python
 calculated_columns = [
     CalculatedColumn("days_old", "julianday('now') - julianday(order_date)"),
@@ -120,6 +138,8 @@ calculated_columns = [
 ```
 
 ## Configuration File
+
+Transformations can be defined in your configuration file for reusable import workflows.
 
 Set up transformations in `config/mappings.json`:
 
@@ -162,6 +182,8 @@ Set up transformations in `config/mappings.json`:
 
 ### Conditional Mapping
 
+Define default values for null or unmapped values using `None` as the key.
+
 ```python
 value_mappings = {
     "priority": {
@@ -174,6 +196,8 @@ value_mappings = {
 ```
 
 ### Complex Calculations
+
+Use CASE statements and mathematical functions for advanced business logic.
 
 ```python
 calculated_columns = [
@@ -190,6 +214,8 @@ calculated_columns = [
 
 ## Best Practices
 
+Follow these guidelines for maintainable and understandable transformation logic.
+
 ### 1. Use Descriptive Names
 
 ```python
@@ -202,6 +228,8 @@ CalculatedColumn("x", "a * b")
 
 ### 2. Test Expressions
 
+Always test your SQL expressions before using them in production imports.
+
 ```python
 # Test your calculated column expressions
 df = sdk.query("SELECT quantity, price, quantity * price as total FROM orders LIMIT 5")
@@ -209,6 +237,8 @@ print(df)
 ```
 
 ### 3. Order Matters
+
+When one calculated column depends on another, define the dependency first.
 
 Calculated columns can reference earlier calculated columns:
 

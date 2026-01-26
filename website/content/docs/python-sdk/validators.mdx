@@ -7,7 +7,11 @@ sidebar:
 
 ## Built-in Validators
 
+Excel-to-sql provides six built-in validators covering the most common data validation scenarios.
+
 ### 1. Unique Validator
+
+Ensures that all values in a column are unique, preventing duplicate records.
 
 Ensure column values are unique:
 
@@ -27,6 +31,8 @@ result = sdk.import_excel(
 ```
 
 ### 2. Range Validator
+
+Validates that numeric values fall within a specified minimum and maximum range.
 
 Validate numeric ranges:
 
@@ -48,6 +54,8 @@ result = sdk.import_excel(
 
 ### 3. Regex Validator
 
+Uses regular expressions to validate text patterns like email addresses, phone numbers, and postal codes.
+
 Pattern matching with regular expressions:
 
 ```python
@@ -64,6 +72,8 @@ result = sdk.import_excel(
 
 ### 4. Enum Validator
 
+Restricts values to a predefined set of allowed values, useful for status codes and categories.
+
 Values must be in a set:
 
 ```python
@@ -78,6 +88,8 @@ result = sdk.import_excel(
 ```
 
 ### 5. NotNull Validator
+
+Ensures that a column contains no null values, critical for required fields like IDs and foreign keys.
 
 Ensure no null values:
 
@@ -94,6 +106,8 @@ result = sdk.import_excel(
 ```
 
 ## Custom Validators
+
+For business-specific validation logic, create custom validator functions with full control over the validation process.
 
 Create your own validation logic:
 
@@ -114,6 +128,8 @@ sdk.import_excel(
 
 ## Multiple Validators
 
+You can apply multiple validation rules to the same column, creating layered validation logic.
+
 Apply multiple validators to one column:
 
 ```python
@@ -126,7 +142,11 @@ validation_rules = [
 
 ## Validation Results
 
+The import operation returns detailed validation results that you can process programmatically.
+
 ### Check for Errors
+
+Always check for validation errors after import to catch data quality issues early.
 
 ```python
 result = sdk.import_excel(
@@ -143,6 +163,8 @@ if result['validation_errors']:
 
 ### Validation Error Format
 
+Each validation error includes row number, column, problematic value, and descriptive message.
+
 ```python
 {
     'row': 42,
@@ -154,6 +176,8 @@ if result['validation_errors']:
 ```
 
 ## Configuration File
+
+Validators can be defined in your configuration file for consistent validation across imports.
 
 Set up validation in `config/mappings.json`:
 
@@ -185,6 +209,8 @@ Set up validation in `config/mappings.json`:
 
 ## Validation Types Reference
 
+Quick reference for all available validator types and their typical use cases.
+
 | Type | Description | Example |
 |------|-------------|---------|
 | `unique` | All values must be unique | Primary keys |
@@ -195,6 +221,8 @@ Set up validation in `config/mappings.json`:
 | `custom` | Custom validator function | Business logic |
 
 ## Best Practices
+
+Follow these guidelines for effective data validation strategies.
 
 ### 1. Validate Critical Data
 
