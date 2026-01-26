@@ -7,7 +7,11 @@ sidebar:
 
 ## What Gets Detected
 
+Auto-Pilot analyzes your data to identify five key patterns that help optimize your database schema and data quality.
+
 ### 1. Primary Keys
+
+Finds columns that can serve as unique identifiers for each row through a combination of naming conventions and statistical analysis.
 
 Identifies columns that uniquely identify rows:
 
@@ -26,6 +30,8 @@ Identifies columns that uniquely identify rows:
 **Confidence Score:** 0.95 (High)
 
 ### 2. Foreign Keys
+
+Discovers relationships between tables by analyzing column names and checking if values in one table reference primary keys in another table.
 
 Detects relationships between tables:
 
@@ -46,6 +52,8 @@ Detects relationships between tables:
 ```
 
 ### 3. Value Mappings
+
+Identifies columns containing coded values that should be translated to human-readable text for better data comprehension.
 
 Finds columns with repeating code patterns:
 
@@ -87,6 +95,8 @@ Finds columns with repeating code patterns:
 
 ### 4. Split Fields
 
+Detects redundant columns where values are split across multiple columns when they could be combined into a single column using COALESCE.
+
 Identifies redundant status columns that should be combined:
 
 **Detection Algorithm:**
@@ -108,6 +118,8 @@ Identifies redundant status columns that should be combined:
 ```
 
 ### 5. Data Types
+
+Analyzes actual data values to determine the most appropriate SQL data type for each column, optimizing storage and query performance.
 
 Infers optimal SQL types from actual data:
 
@@ -147,6 +159,8 @@ else:
 
 ## Confidence Scores
 
+Auto-Pilot assigns a confidence score to each detection based on how certain it is about the pattern. Higher scores indicate more reliable detections.
+
 Each detection includes a confidence score (0-1):
 
 | Score | Meaning | Action |
@@ -157,6 +171,8 @@ Each detection includes a confidence score (0-1):
 | 0.00-0.49 | Low | Manual configuration |
 
 ## Interactive Review
+
+Interactive mode presents each detection with supporting evidence so you can make informed decisions about whether to accept or override it.
 
 In interactive mode, you'll see:
 
@@ -170,6 +186,8 @@ In interactive mode, you'll see:
 
 ## Override Detections
 
+You're always in control. Interactive mode lets you override any Auto-Pilot detection with your own choice.
+
 You can override any detection:
 
 ```bash
@@ -179,6 +197,8 @@ excel-to-sql magic --data . --interactive
 ```
 
 ## Advanced: Python SDK
+
+Pattern detection is also available programmatically through the Python SDK for custom workflows and automation.
 
 Use pattern detection programmatically:
 
