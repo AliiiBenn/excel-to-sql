@@ -7,7 +7,11 @@ sidebar:
 
 ## Scoring Dimensions
 
+Auto-Pilot evaluates data quality across four dimensions, each with a specific weight that reflects its importance in overall data quality.
+
 ### 1. Completeness (30% weight)
+
+Measures how much data is missing. Null values can break queries and skew analysis results.
 
 Percentage of null values in the dataset.
 
@@ -25,6 +29,8 @@ completeness_score = (1 - null_count / total_rows) * 100
 
 ### 2. Uniqueness (25% weight)
 
+Detects duplicate records that can distort analysis results and violate database constraints.
+
 Duplicate row detection.
 
 **Calculation:**
@@ -40,6 +46,8 @@ uniqueness_score = (unique_rows / total_rows) * 100
 - \<80% unique: -30 points
 
 ### 3. Validity (25% weight)
+
+Verifies that data values conform to expected types and formats. Invalid values cause errors in processing and analysis.
 
 Type and format checking.
 
@@ -57,6 +65,8 @@ Type and format checking.
 
 ### 4. Consistency (20% weight)
 
+Analyzes value distributions to detect anomalies and statistical outliers that might indicate data entry errors.
+
 Value distribution analysis.
 
 **Checks:**
@@ -73,6 +83,8 @@ Value distribution analysis.
 
 ## Quality Grades
 
+The four dimension scores are combined using a weighted average to produce an overall quality score from 0 to 100, which is then converted to a letter grade for easy interpretation.
+
 Final score = weighted sum of all dimensions
 
 | Grade | Score Range | Meaning |
@@ -83,6 +95,8 @@ Final score = weighted sum of all dimensions
 | **D** | 0-59 | Poor quality requires attention |
 
 ## Example Report
+
+Quality reports provide a detailed breakdown of scores, issues, and recommendations for improving data quality.
 
 ```json
 {
@@ -114,6 +128,8 @@ Final score = weighted sum of all dimensions
 
 ## Issue Types
 
+Issues are categorized by severity to help you prioritize which problems to address first.
+
 ### By Severity
 
 - **HIGH**: Critical data integrity issues
@@ -133,6 +149,8 @@ Final score = weighted sum of all dimensions
 
 ### By Category
 
+Issues are also grouped by the type of problem they represent, making it easier to identify systematic data quality issues.
+
 | Category | Examples |
 |----------|-----------|
 | Null Values | Missing required data |
@@ -143,6 +161,8 @@ Final score = weighted sum of all dimensions
 | Range Issues | Negative ages, future dates |
 
 ## Column-Level Analysis
+
+Quality analysis drills down to individual columns, providing detailed statistics for each field including null counts, unique values, and outliers.
 
 Each column is analyzed individually:
 
@@ -166,6 +186,8 @@ Each column is analyzed individually:
 ```
 
 ## Generate Quality Report
+
+You can generate detailed HTML quality reports using either the CLI or Python SDK. Reports include dimension breakdowns, column analysis, and actionable recommendations.
 
 ### CLI
 
