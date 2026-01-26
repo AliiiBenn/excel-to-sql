@@ -18,6 +18,7 @@
     "auto-pilot/quality-scoring",
     "auto-pilot/recommendations",
     "---Python SDK---",
+    "python-sdk/index",
     "python-sdk/transformations",
     "python-sdk/validators",
     "---Examples---",
