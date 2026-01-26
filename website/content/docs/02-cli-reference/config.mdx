@@ -1,0 +1,209 @@
+---
+title: config Command
+description: Manage type configurations
+sidebar:
+  order: 15
+---
+
+# config Command
+
+Manage type configurations for importing Excel files.
+
+## Usage
+
+```bash
+excel-to-sql config [OPTIONS]
+```
+
+## Options
+
+```bash
+--add-type TEXT       Add new type configuration
+--table TEXT          Target table name
+--pk TEXT             Primary key column(s)
+--file TEXT           Excel file for auto-detection
+--list                List all mappings
+--show TEXT           Show mapping details
+--remove TEXT         Remove mapping
+--validate            Validate all mappings
+```
+
+## Examples
+
+### Add New Type
+
+```bash
+excel-to-sql config add --type products --table products --pk id
+```
+
+### Add with Auto-Detection
+
+```bash
+excel-to-sql config add --type products --table products --pk id --file products.xlsx
+```
+
+This analyzes the Excel file and suggests column mappings.
+
+### List All Types
+
+```bash
+excel-to-sql config --list
+```
+
+Output:
+```
+Configured Types:
+┌──────────────┬───────────────┬─────────────┐
+│ Type         │ Table         │ Primary Key │
+├──────────────┼───────────────┼─────────────┤
+│ products     │ products      │ id          │
+│ customers    │ customers     │ id          │
+│ orders       │ orders        │ id          │
+└──────────────┴───────────────┴─────────────┘
+```
+
+### Show Type Details
+
+```bash
+excel-to-sql config --show products
+```
+
+### Remove Type
+
+```bash
+excel-to-sql config --remove old_type
+```
+
+### Validate All Configurations
+
+```bash
+excel-to-sql config --validate
+```
+
+## Configuration File
+
+Type configurations are stored in `config/mappings.json`:
+
+```json
+{
+  "products": {
+    "target_table": "products",
+    "primary_key": ["id"],
+    "column_mappings": {
+      "ID": {"target": "id", "type": "integer"},
+      "Name": {"target": "name", "type": "string"}
+    },
+    "value_mappings": [
+      {
+        "column": "status",
+        "mappings": {"1": "Active", "0": "Inactive"}
+      }
+    ]
+  }
+}
+```
+
+## Column Types
+
+Supported SQL types:
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `string` | TEXT columns | "Widget A" |
+| `integer` | Int64 (nullable) | 42 |
+| `float` | REAL columns | 19.99 |
+| `boolean` | Boolean (0/1) | 1 |
+| `date` | TIMESTAMP | "2025-01-26" |
+
+## Composite Keys
+
+Multiple column primary keys:
+
+```bash
+excel-to-sql config add --type order_items --table order_items --pk order_id,product_id
+```
+
+## Manual Configuration
+
+You can also edit `config/mappings.json` directly:
+
+```bash
+nano config/mappings.json
+```
+
+Then validate:
+
+```bash
+excel-to-sql config --validate
+```
+
+## Common Workflows
+
+### Workflow 1: Quick Setup with Auto-Detection
+
+```bash
+# 1. Initialize
+excel-to-sql init
+
+# 2. Add type with auto-detection
+excel-to-sql config add --type products --table products --pk id --file products.xlsx
+
+# 3. Import
+excel-to-sql import --file products.xlsx --type products
+```
+
+### Workflow 2: Manual Configuration
+
+```bash
+# 1. Add basic type
+excel-to-sql config add --type products --table products --pk id
+
+# 2. Edit mappings.json
+nano config/mappings.json
+
+# 3. Validate
+excel-to-sql config --validate
+
+# 4. Import
+excel-to-sql import --file products.xlsx --type products
+```
+
+### Workflow 3: Auto-Pilot (Recommended)
+
+```bash
+# Let Auto-Pilot generate everything
+excel-to-sql magic --data . --interactive
+
+# Copy generated config
+cp .excel-to-sql/mappings.json config/
+
+# Import
+excel-to-sql import --file products.xlsx --type products
+```
+
+## Validation Errors
+
+Common validation errors:
+
+**"Primary key not found in column mappings"**
+```bash
+# Ensure primary key is in column_mappings
+excel-to-sql config add --type products --table products --pk ID
+```
+
+**"Duplicate column in mappings"**
+```bash
+# Edit config/mappings.json to remove duplicates
+nano config/mappings.json
+```
+
+**"Invalid data type"**
+```bash
+# Use valid types: string, integer, float, boolean, date
+```
+
+## See Also
+
+- [Configuration documentation](/docs/configuration) - Complete configuration guide
+- [import command](/docs/cli-reference/import) - Import with configuration
+- [Auto-Pilot mode](/docs/auto-pilot) - Auto-generate configurations

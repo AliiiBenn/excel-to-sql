@@ -1,0 +1,261 @@
+---
+title: Quality Scoring
+description: Data quality analysis and scoring
+sidebar:
+  order: 22
+---
+
+# Quality Scoring
+
+Auto-Pilot performs multi-dimensional data quality analysis with scores from 0-100 and letter grades A-D.
+
+## Scoring Dimensions
+
+### 1. Completeness (30% weight)
+
+Percentage of null values in the dataset.
+
+**Calculation:**
+```python
+completeness_score = (1 - null_count / total_rows) * 100
+```
+
+**Penalties:**
+- 0% null: Full points
+- 1-5% null: -5 points
+- 5-10% null: -10 points
+- 10-20% null: -20 points
+- \>20% null: -30 points
+
+### 2. Uniqueness (25% weight)
+
+Duplicate row detection.
+
+**Calculation:**
+```python
+uniqueness_score = (unique_rows / total_rows) * 100
+```
+
+**Penalties:**
+- 100% unique: Full points
+- 95-99% unique: -5 points
+- 90-94% unique: -10 points
+- 80-89% unique: -20 points
+- \<80% unique: -30 points
+
+### 3. Validity (25% weight)
+
+Type and format checking.
+
+**Checks:**
+- Type consistency (integers in integer columns)
+- Format validation (emails, dates, phone numbers)
+- Range violations (negative ages, future dates)
+- Regex pattern matches
+
+**Penalties:**
+- 100% valid: Full points
+- 95-99% valid: -5 points
+- 90-94% valid: -10 points
+- \<90% valid: -20 to -30 points
+
+### 4. Consistency (20% weight)
+
+Value distribution analysis.
+
+**Checks:**
+- Outlier detection (statistical outliers)
+- Standard deviation analysis
+- Value distribution patterns
+- Domain knowledge validation
+
+**Penalties:**
+- Normal distribution: Full points
+- Minor outliers: -5 points
+- Moderate outliers: -10 points
+- Major outliers: -20 points
+
+## Quality Grades
+
+Final score = weighted sum of all dimensions
+
+| Grade | Score Range | Meaning |
+|-------|-------------|---------|
+| **A** | 90-100 | Excellent quality |
+| **B** | 75-89 | Good quality with minor issues |
+| **C** | 60-74 | Acceptable with notable issues |
+| **D** | 0-59 | Poor quality requires attention |
+
+## Example Report
+
+```json
+{
+  "table": "products",
+  "overall_score": 87,
+  "grade": "B",
+  "dimensions": {
+    "completeness": {"score": 95, "weight": 0.30, "issues": []},
+    "uniqueness": {"score": 82, "weight": 0.25, "issues": ["3 duplicate rows found"]},
+    "validity": {"score": 90, "weight": 0.25, "issues": ["5 invalid email formats"]},
+    "consistency": {"score": 85, "weight": 0.20, "issues": ["Price column has outliers"]}
+  },
+  "issues": [
+    {
+      "column": "email",
+      "type": "format",
+      "severity": "MEDIUM",
+      "message": "5 rows have invalid email format"
+    },
+    {
+      "column": "price",
+      "type": "outlier",
+      "severity": "LOW",
+      "message": "10 prices exceed 3 standard deviations from mean"
+    }
+  ]
+}
+```
+
+## Issue Types
+
+### By Severity
+
+- **HIGH**: Critical data integrity issues
+  - Null values in NOT NULL columns
+  - Type mismatches \>10%
+  - Duplicate primary keys
+
+- **MEDIUM**: Quality improvements
+  - Null values 5-10%
+  - Some format violations
+  - Outliers detected
+
+- **LOW**: Nice-to-have optimizations
+  - Minor formatting issues
+  - Slight inconsistencies
+  - Naming convention suggestions
+
+### By Category
+
+| Category | Examples |
+|----------|-----------|
+| Null Values | Missing required data |
+| Duplicates | Duplicate rows, duplicate keys |
+| Type Mismatches | Text in numeric columns |
+| Format Issues | Invalid emails, dates |
+| Outliers | Statistical anomalies |
+| Range Issues | Negative ages, future dates |
+
+## Column-Level Analysis
+
+Each column is analyzed individually:
+
+```json
+{
+  "column_name": "price",
+  "type": "float",
+  "quality_score": 85,
+  "null_count": 5,
+  "null_percentage": 3.3,
+  "unique_count": 140,
+  "unique_percentage": 93.3,
+  "min_value": 0.99,
+  "max_value": 9999.99,
+  "mean": 52.47,
+  "std_dev": 234.56,
+  "outliers": [
+    {"row": 42, "value": 9999.99, "z_score": 4.2}
+  ]
+}
+```
+
+## Generate Quality Report
+
+### CLI
+
+```bash
+excel-to-sql profile --table products --output quality_report.html
+```
+
+### Python SDK
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+sdk.generate_quality_report("products", output="quality_report.html")
+```
+
+Opens in browser with:
+- Overall score and grade
+- Dimension breakdowns
+- Column-level analysis
+- Issue list with severity
+- Recommendations
+
+## Interpret Scores
+
+### Score: 95-100 (Grade A)
+
+**Meaning:** Excellent quality
+**Action:** Use as-is, no changes needed
+
+### Score: 75-89 (Grade B)
+
+**Meaning:** Good quality with minor issues
+**Action:** Review and fix HIGH priority issues
+
+### Score: 60-74 (Grade C)
+
+**Meaning:** Acceptable but needs improvement
+**Action:** Fix HIGH and MEDIUM priority issues
+
+### Score: 0-59 (Grade D)
+
+**Meaning:** Poor quality
+**Action:** Major data cleaning required
+
+## Improve Quality Score
+
+### Fix Null Values
+
+```python
+# In mapping configuration
+{
+  "column_mappings": {
+    "price": {"target": "price", "type": "float", "default": 0.0}
+  }
+}
+```
+
+### Remove Duplicates
+
+```python
+# Use validation rules
+{
+  "validation_rules": [
+    {"column": "id", "type": "unique"}
+  ]
+}
+```
+
+### Fix Format Issues
+
+```python
+# Use regex validation
+{
+  "validation_rules": [
+    {
+      "column": "email",
+      "type": "regex",
+      "pattern": "^[^@]+@[^@]+\\.[^@]+$"
+    }
+  ]
+}
+```
+
+## See Also
+
+- [Pattern Detection](/docs/auto-pilot/pattern-detection) - Detection algorithms
+- [Recommendations](/docs/auto-pilot/recommendations) - Auto-fix capabilities
+- [Profiling](/docs/python-sdk/profiling) - Python SDK profiling

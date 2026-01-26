@@ -1,0 +1,138 @@
+---
+title: export Command
+description: Export data from SQLite to Excel
+sidebar:
+  order: 13
+---
+
+# export Command
+
+Export data from the SQLite database back to Excel files.
+
+## Usage
+
+```bash
+excel-to-sql export --table TABLE --output FILE
+```
+
+## Options
+
+```bash
+--table TEXT      Export entire table
+--query TEXT      Custom SQL query
+--output, -o TEXT  Output Excel file path (required)
+```
+
+## Examples
+
+### Export Entire Table
+
+```bash
+excel-to-sql export --table products --output products_export.xlsx
+```
+
+### Export Query Results
+
+```bash
+excel-to-sql export --query "SELECT * FROM products WHERE price > 100" --output expensive_products.xlsx
+```
+
+### Export with Full Path
+
+```bash
+excel-to-sql export --table customers --output /path/to/export/customers.xlsx
+```
+
+### Export Complex Query
+
+```bash
+excel-to-sql export --query "
+  SELECT
+    p.name,
+    c.name as customer,
+    o.order_date
+  FROM orders o
+  JOIN products p ON o.product_id = p.id
+  JOIN customers c ON o.customer_id = c.id
+  WHERE o.order_date >= '2025-01-01'
+" --output recent_orders.xlsx
+```
+
+## Output Location
+
+Files are saved to the specified path. Common locations:
+
+```bash
+# Export to exports directory
+excel-to-sql export --table products --output exports/products.xlsx
+
+# Export to custom location
+excel-to-sql export --table products --output /path/to/reports/products.xlsx
+```
+
+## Multi-Sheet Export (Python SDK)
+
+For multi-sheet export, use the Python SDK:
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+sdk.export_to_excel(
+    output="report.xlsx",
+    sheet_mapping={
+        "Products": "products",
+        "Customers": "customers",
+        "Orders": "SELECT * FROM orders WHERE status = 'complete'"
+    }
+)
+```
+
+## Output Format
+
+- **Format**: Excel (.xlsx)
+- **Encoding**: UTF-8
+- **Dates**: ISO 8601 format (YYYY-MM-DD HH:MM:SS)
+- **Numbers**: Preserved as-is from database
+
+## Large Exports
+
+For large datasets:
+
+```bash
+# Export query with LIMIT
+excel-to-sql export --query "SELECT * FROM large_table LIMIT 10000" --output sample.xlsx
+```
+
+## Common Use Cases
+
+### Backup Data
+
+```bash
+excel-to-sql export --table products --output backups/products_$(date +%Y%m%d).xlsx
+```
+
+### Generate Reports
+
+```bash
+excel-to-sql export --query "
+  SELECT
+    category,
+    COUNT(*) as count,
+    AVG(price) as avg_price
+  FROM products
+  GROUP BY category
+" --output category_report.xlsx
+```
+
+### Share with Stakeholders
+
+```bash
+excel-to-sql export --table inventory --output reports/inventory_snapshot.xlsx
+```
+
+## See Also
+
+- [import command](/docs/cli-reference/import) - Import data
+- [Python SDK](/docs/python-sdk) - Multi-sheet export
+- [query examples](/docs/examples) - SQL query examples

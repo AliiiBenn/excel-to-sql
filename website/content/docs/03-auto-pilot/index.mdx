@@ -1,0 +1,155 @@
+---
+title: Auto-Pilot Mode
+description: Zero-configuration import with intelligent pattern detection
+sidebar:
+  order: 20
+---
+
+# Auto-Pilot Mode
+
+Auto-Pilot mode provides **zero-configuration import** with intelligent pattern detection, quality scoring, and automated recommendations.
+
+## Quick Start
+
+```bash
+excel-to-sql magic --data ./excels --interactive
+```
+
+That's it! Auto-Pilot will:
+1. Analyze all Excel files in the directory
+2. Detect patterns (primary keys, value mappings, data types)
+3. Score data quality
+4. Generate recommendations
+5. Create configuration files
+6. Guide you through the process
+
+## What Auto-Pilot Does
+
+### Pattern Detection
+
+Automatically identifies:
+- **Primary Keys**: Columns with unique values
+- **Foreign Keys**: Relationships between tables
+- **Value Mappings**: Code columns (0/1, Active/Inactive)
+- **Split Fields**: Redundant status columns
+- **Data Types**: Optimal SQL types
+
+### Quality Analysis
+
+Multi-dimensional scoring:
+- Completeness (30%)
+- Uniqueness (25%)
+- Validity (25%)
+- Consistency (20%)
+
+**Quality Grades:** A (90-100), B (75-89), C (60-74), D (0-59)
+
+### Smart Recommendations
+
+Prioritized suggestions:
+- **HIGH**: Critical issues
+- **MEDIUM**: Quality improvements
+- **LOW**: Optimizations
+
+### Auto-Fix Capabilities
+
+Automatically corrects:
+- French codes (ENTRÉE→inbound, SORTIE→outbound)
+- Null values
+- Split field redundancy
+
+## Modes
+
+### Interactive Mode (Recommended)
+
+```bash
+excel-to-sql magic --data . --interactive
+```
+
+Step-by-step guided configuration with:
+- Review detected patterns
+- Accept/modify suggestions
+- Address quality issues
+- Preview final config
+
+### Automatic Mode
+
+```bash
+excel-to-sql magic --data . --output my-config
+```
+
+Generates configuration without prompts.
+
+### Dry Run Mode
+
+```bash
+excel-to-sql magic --data . --dry-run
+```
+
+Analyze without generating files.
+
+## Output Files
+
+Auto-Pilot creates `.excel-to-sql/`:
+
+```
+.excel-to-sql/
+├── mappings.json          # Type configurations
+├── analysis.json          # Pattern detection results
+├── quality_report.json    # Quality scores and issues
+└── backups/              # Auto-fix backups
+```
+
+## When to Use Auto-Pilot
+
+### Perfect For
+
+✅ Quick prototyping and testing
+✅ Ad-hoc data imports
+✅ Exploring new datasets
+✅ Learning the tool
+✅ Small to medium datasets
+✅ Data quality assessment
+
+### Not Ideal For
+
+❌ Production deployments
+❌ Complex custom transformations
+❌ Highly specialized business logic
+❌ Performance-critical operations
+
+## Workflow
+
+1. **Run Auto-Pilot**
+   ```bash
+   excel-to-sql magic --data . --interactive
+   ```
+
+2. **Review Suggestions**
+   - Accept/modify primary keys
+   - Confirm value mappings
+   - Address quality issues
+
+3. **Generate Configuration**
+   - Auto-Pilot creates `mappings.json`
+
+4. **Import Data**
+   ```bash
+   excel-to-sql import --file products.xlsx --type products
+   ```
+
+## Comparison: Auto-Pilot vs Manual
+
+| Feature | Auto-Pilot | Manual |
+|---------|-----------|--------|
+| Setup time | 2-5 minutes | 10-30 minutes |
+| Pattern detection | Automatic | Manual |
+| Quality analysis | Included | Manual |
+| Best for | Quick start, exploration | Full control, production |
+
+## See Also
+
+- [Pattern Detection](/docs/auto-pilot/pattern-detection) - Detection algorithms
+- [Quality Scoring](/docs/auto-pilot/quality-scoring) - Quality analysis
+- [Recommendations](/docs/auto-pilot/recommendations) - Auto-fix capabilities
+- [CLI: magic command](/docs/cli-reference/magic) - Command reference

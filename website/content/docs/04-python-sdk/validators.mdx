@@ -1,0 +1,237 @@
+---
+title: Validators
+description: Data validation rules and checks
+sidebar:
+  order: 32
+---
+
+# Validators
+
+Ensure data integrity with validation rules.
+
+## Built-in Validators
+
+### 1. Unique Validator
+
+Ensure column values are unique:
+
+```python
+from excel_to_sql import ExcelToSqlite
+from excel_to_sql.validators import UniqueValidator
+
+sdk = ExcelToSqlite()
+
+result = sdk.import_excel(
+    "customers.xlsx",
+    "customers",
+    validation_rules=[
+        ValidationRule("email", "unique")
+    ]
+)
+```
+
+### 2. Range Validator
+
+Validate numeric ranges:
+
+```python
+from excel_to_sql.validators import ValidationRule
+
+sdk = ExcelToSqlite()
+
+result = sdk.import_excel(
+    "products.xlsx",
+    "products",
+    validation_rules=[
+        ValidationRule("price", "range", min_value=0, max_value=1000000),
+        ValidationRule("quantity", "range", min_value=0, max_value=10000),
+        ValidationRule("age", "range", min_value=0, max_value=120)
+    ]
+)
+```
+
+### 3. Regex Validator
+
+Pattern matching with regular expressions:
+
+```python
+result = sdk.import_excel(
+    "users.xlsx",
+    "users",
+    validation_rules=[
+        ValidationRule("email", "regex", pattern=r"^[^@]+@[^@]+\.[^@]+$"),
+        ValidationRule("phone", "regex", pattern=r"^\+?\d{10,15}$"),
+        ValidationRule("postal_code", "regex", pattern=r"^\d{5}(-\d{4})?$")
+    ]
+)
+```
+
+### 4. Enum Validator
+
+Values must be in a set:
+
+```python
+result = sdk.import_excel(
+    "products.xlsx",
+    "products",
+    validation_rules=[
+        ValidationRule("status", "enum", values=["Active", "Inactive", "Pending"]),
+        ValidationRule("category", "enum", values=["Electronics", "Hardware", "Software"])
+    ]
+)
+```
+
+### 5. NotNull Validator
+
+Ensure no null values:
+
+```python
+result = sdk.import_excel(
+    "orders.xlsx",
+    "orders",
+    validation_rules=[
+        ValidationRule("id", "not_null"),
+        ValidationRule("customer_id", "not_null"),
+        ValidationRule("order_date", "not_null")
+    ]
+)
+```
+
+## Custom Validators
+
+Create your own validation logic:
+
+```python
+from excel_to_sql.validators import CustomValidator
+
+def validate_positive(value):
+    return value > 0, "Value must be positive"
+
+sdk.import_excel(
+    "products.xlsx",
+    "products",
+    validation_rules=[
+        CustomValidator("price", validate_positive)
+    ]
+)
+```
+
+## Multiple Validators
+
+Apply multiple validators to one column:
+
+```python
+validation_rules = [
+    ValidationRule("email", "unique"),
+    ValidationRule("email", "not_null"),
+    ValidationRule("email", "regex", pattern=r"^[^@]+@[^@]+\.[^@]+$")
+]
+```
+
+## Validation Results
+
+### Check for Errors
+
+```python
+result = sdk.import_excel(
+    "data.xlsx",
+    "mytype",
+    validation_rules=[...]
+)
+
+if result['validation_errors']:
+    print(f"Validation failed with {len(result['validation_errors'])} errors")
+    for error in result['validation_errors']:
+        print(f"  {error['column']}: {error['message']}")
+```
+
+### Validation Error Format
+
+```python
+{
+    'row': 42,
+    'column': 'email',
+    'value': 'invalid-email',
+    'message': 'Value does not match pattern',
+    'severity': 'ERROR'
+}
+```
+
+## Configuration File
+
+Set up validation in `config/mappings.json`:
+
+```json
+{
+  "customers": {
+    "target_table": "customers",
+    "primary_key": ["id"],
+    "validation_rules": [
+      {
+        "column": "id",
+        "type": "unique"
+      },
+      {
+        "column": "email",
+        "type": "regex",
+        "pattern": "^[^@]+@[^@]+\\.[^@]+$"
+      },
+      {
+        "column": "age",
+        "type": "range",
+        "min_value": 0,
+        "max_value": 120
+      }
+    ]
+  }
+}
+```
+
+## Validation Types Reference
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `unique` | All values must be unique | Primary keys |
+| `not_null` | No null values allowed | Required fields |
+| `range` | Numeric range check | Age, price, quantity |
+| `regex` | Pattern matching | Email, phone, URL |
+| `enum` | Value must be in set | Status codes |
+| `custom` | Custom validator function | Business logic |
+
+## Best Practices
+
+### 1. Validate Critical Data
+
+Always validate:
+- Primary keys (unique, not_null)
+- Foreign keys (reference integrity)
+- Required fields (not_null)
+- Format-sensitive fields (regex)
+
+### 2. Order Matters
+
+Validators run in definition order:
+```python
+validation_rules = [
+    ValidationRule("id", "not_null"),      # Check 1
+    ValidationRule("id", "unique")         # Check 2
+]
+```
+
+### 3. Use Appropriate Validators
+
+Choose the right validator for the data type:
+
+```python
+# Good
+ValidationRule("email", "regex", pattern=r"...")
+
+# Less efficient
+CustomValidator("email", lambda x: "@" in x)
+```
+
+## See Also
+
+- [Transformations](/docs/python-sdk/transformations) - Data transformations
+- [Profiling](/docs/python-sdk/profiling) - Quality analysis
+- [Configuration](/docs/configuration) - Validation configuration

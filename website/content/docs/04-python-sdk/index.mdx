@@ -1,0 +1,264 @@
+---
+title: Python SDK
+description: Programmatic access to excel-to-sql
+sidebar:
+  order: 30
+---
+
+# Python SDK
+
+The Python SDK provides full programmatic access to all excel-to-sql features.
+
+## Installation
+
+```bash
+pip install excel-to-sql
+```
+
+## Quick Start
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+# Initialize SDK
+sdk = ExcelToSqlite()
+
+# Import Excel file
+result = sdk.import_excel("products.xlsx", "products")
+print(f"Imported {result['rows_imported']} rows")
+
+# Query data
+df = sdk.query("SELECT * FROM products WHERE price > 100")
+print(df.head())
+
+# Export to Excel
+sdk.export_to_excel("report.xlsx", {"Products": "products"})
+
+# Profile quality
+profile = sdk.profile_table("products")
+print(f"Quality Score: {profile['summary']['quality_score']}")
+```
+
+## Main SDK Class
+
+### ExcelToSqlite
+
+The main SDK class for all operations.
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+```
+
+**Optional Parameters:**
+```python
+sdk = ExcelToSqlite(
+    db_path="custom/database.db",
+    config_path="custom/mappings.json"
+)
+```
+
+## Core Operations
+
+### Import
+
+```python
+result = sdk.import_excel(
+    file_path="data.xlsx",
+    type_name="mytype",
+    tags=["import", "verified"]
+)
+```
+
+**Returns:**
+```python
+{
+    'rows_imported': 150,
+    'table_name': 'mytable',
+    'import_time': '2025-01-26 14:30:00',
+    'content_hash': 'abc123',
+    'validation_errors': []
+}
+```
+
+### Export
+
+```python
+# Export table
+sdk.export_to_excel(
+    output="report.xlsx",
+    sheet_mapping={"Products": "products"}
+)
+
+# Export query
+sdk.export_to_excel(
+    output="report.xlsx",
+    sheet_mapping={
+        "Products": "SELECT * FROM products",
+        "Orders": "SELECT * FROM orders WHERE status = 'complete'"
+    }
+)
+```
+
+### Query
+
+```python
+# Simple query
+df = sdk.query("SELECT * FROM products")
+
+# Query with parameters
+df = sdk.query(
+    "SELECT * FROM products WHERE category = ?",
+    params=["Electronics"]
+)
+
+# Complex query
+df = sdk.query("""
+    SELECT
+        p.name,
+        c.name as customer,
+        o.order_date
+    FROM orders o
+    JOIN products p ON o.product_id = p.id
+    JOIN customers c ON o.customer_id = c.id
+    WHERE o.order_date >= ?
+""", params=["2025-01-01"])
+```
+
+### Profile
+
+```python
+# Profile table
+profile = sdk.profile_table("products")
+
+# Overall score
+print(f"Score: {profile['summary']['quality_score']}")
+print(f"Grade: {profile['summary']['grade']}")
+
+# Column statistics
+for col in profile['columns']:
+    print(f"{col['name']}: {col['quality_score']}")
+```
+
+## Advanced Features
+
+### Custom Transformations
+
+```python
+from excel_to_sql.transformations import ValueMapping, CalculatedColumn
+
+result = sdk.import_excel(
+    "data.xlsx",
+    "mytype",
+    value_mappings={
+        "status": {"1": "Active", "0": "Inactive"}
+    },
+    calculated_columns=[
+        CalculatedColumn("total", "quantity * price")
+    ]
+)
+```
+
+### Validation Rules
+
+```python
+from excel_to_sql.validators import ValidationRule
+
+result = sdk.import_excel(
+    "data.xlsx",
+    "mytype",
+    validation_rules=[
+        ValidationRule("id", "unique"),
+        ValidationRule("email", "regex", pattern=r"^[^@]+@[^@]+\.[^@]+$"),
+        ValidationRule("age", "range", min_value=0, max_value=120)
+    ]
+)
+```
+
+### Hooks
+
+```python
+from excel_to_sql.transformations import HookSystem
+
+def before_import(ctx):
+    print(f"Importing {ctx.file_name}")
+
+def after_import(ctx):
+    print(f"Imported {ctx.rows_imported} rows")
+
+hooks = HookSystem()
+hooks.register_before_import(before_import)
+hooks.register_after_import(after_import)
+
+sdk.import_excel("data.xlsx", "mytype", hooks=hooks)
+```
+
+## Use Cases
+
+### Data Pipeline
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Import multiple files
+files = ["products.xlsx", "customers.xlsx", "orders.xlsx"]
+for f in files:
+    result = sdk.import_excel(f, f.split(".")[0])
+    print(f"✓ {f}: {result['rows_imported']} rows")
+```
+
+### Quality Monitoring
+
+```python
+sdk = ExcelToSqlite()
+
+# Import and check quality
+result = sdk.import_excel("data.xlsx", "mytype")
+profile = sdk.profile_table("mytable")
+
+if profile['summary']['quality_score'] < 70:
+    print("⚠️  Low quality score!")
+    for issue in profile['issues']:
+        print(f"  {issue['severity']}: {issue['message']}")
+```
+
+### Batch Processing
+
+```python
+import os
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Process all Excel files in directory
+for filename in os.listdir("data/"):
+    if filename.endswith(".xlsx"):
+        table_name = filename.split(".")[0]
+        sdk.import_excel(f"data/{filename}", table_name)
+        print(f"✓ Imported {table_name}")
+```
+
+## Error Handling
+
+```python
+from excel_to_sql import ExcelToSqlite
+from excel_to_sql.exceptions import ImportError
+
+sdk = ExcelToSqlite()
+
+try:
+    result = sdk.import_excel("data.xlsx", "mytype")
+except ImportError as e:
+    print(f"Import failed: {e}")
+    # Handle error
+```
+
+## See Also
+
+- [Transformations](/docs/python-sdk/transformations) - Value mappings, calculated columns
+- [Validators](/docs/python-sdk/validators) - Validation rules
+- [Profiling](/docs/python-sdk/profiling) - Quality analysis
+- [Examples](/docs/examples) - Real-world examples

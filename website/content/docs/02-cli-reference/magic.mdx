@@ -1,0 +1,212 @@
+---
+title: magic Command
+description: Auto-Pilot automatic configuration
+sidebar:
+  order: 14
+---
+
+# magic Command
+
+Auto-Pilot mode: Automatically detect patterns and generate configuration.
+
+## Usage
+
+```bash
+excel-to-sql magic --data PATH
+```
+
+## Options
+
+```bash
+-d, --data TEXT       Directory containing Excel files (default: current directory)
+-o, --output TEXT     Output directory for config (default: .excel-to-sql)
+--interactive, -i     Interactive guided configuration
+--dry-run             Analyze without generating configuration
+```
+
+## Examples
+
+### Basic Auto-Pilot
+
+```bash
+cd /path/to/excel/files
+excel-to-sql magic --data .
+```
+
+### Interactive Mode
+
+```bash
+excel-to-sql magic --data ./excels --interactive
+```
+
+### Dry Run Analysis
+
+```bash
+excel-to-sql magic --data . --dry-run
+```
+
+### Custom Output Directory
+
+```bash
+excel-to-sql magic --data . --output my-config
+```
+
+## What Auto-Pilot Detects
+
+### 1. Primary Keys
+
+Automatically identifies columns with unique values:
+```python
+# Detected: ID column as primary key
+primary_key: ["id"]
+```
+
+### 2. Foreign Keys
+
+Detects relationships between tables:
+```python
+# Detected: customer_id references customers.id
+foreign_keys: [{
+  "column": "customer_id",
+  "references": "customers.id"
+}]
+```
+
+### 3. Value Mappings
+
+Finds code columns requiring translation:
+```python
+# Detected: Status column with codes 0/1
+value_mappings: [{
+  "column": "status",
+  "mappings": {"0": "Inactive", "1": "Active"}
+}]
+```
+
+### 4. Data Types
+
+Infers optimal SQL types:
+```python
+# Detected types from data
+column_mappings: {
+  "id": {"type": "integer"},
+  "price": {"type": "float"},
+  "name": {"type": "string"},
+  "created_at": {"type": "date"}
+}
+```
+
+### 5. Quality Issues
+
+Identifies data problems:
+- Null values
+- Duplicates
+- Type mismatches
+- Outliers
+
+## Interactive Mode
+
+Step-by-step guided configuration:
+
+```bash
+excel-to-sql magic --data . --interactive
+```
+
+You'll be prompted to:
+1. Review detected primary keys
+2. Confirm value mappings
+3. Address quality issues
+4. Validate configuration
+5. Save final configuration
+
+## Output Files
+
+Auto-Pilot creates `.excel-to-sql/` directory:
+
+```
+.excel-to-sql/
+├── mappings.json          # Generated type configurations
+├── analysis.json          # Pattern detection results
+├── quality_report.json    # Data quality analysis
+└── backups/              # Automatic backups
+```
+
+## Quality Scoring
+
+Auto-Pilot analyzes data quality across dimensions:
+
+| Dimension | Weight | Description |
+|-----------|--------|-------------|
+| Completeness | 30% | Null value percentage |
+| Uniqueness | 25% | Duplicate detection |
+| Validity | 25% | Type/format checking |
+| Consistency | 20% | Value distribution |
+
+**Quality Grades:**
+- **A (90-100)**: Excellent
+- **B (75-89)**: Good with minor issues
+- **C (60-74)**: Acceptable with notable issues
+- **D (0-59)**: Poor quality
+
+## Recommendations
+
+Auto-Pilot generates prioritized recommendations:
+
+- **HIGH**: Critical issues affecting data integrity
+- **MEDIUM**: Quality improvements
+- **LOW**: Nice-to-have optimizations
+
+## Auto-Fix Capabilities
+
+Auto-Pilot can automatically fix:
+
+- **French Codes**: ENTRÉE→inbound, SORTIE→outbound
+- **Null Values**: Fill with defaults
+- **Split Fields**: Combine redundant columns
+
+## Dry Run Mode
+
+Analyze without making changes:
+
+```bash
+excel-to-sql magic --data . --dry-run
+```
+
+Shows:
+- Detected patterns
+- Quality scores
+- Recommendations
+- (No files created)
+
+## Use Cases
+
+### Perfect For
+
+- Quick prototyping
+- Ad-hoc data imports
+- Exploring new datasets
+- Learning the tool
+- Small to medium datasets
+
+### Not Ideal For
+
+- Production deployments
+- Complex custom transformations
+- Highly specialized business logic
+- Performance-critical operations
+
+## Next Steps
+
+After Auto-Pilot generates configuration:
+
+1. Review `.excel-to-sql/mappings.json`
+2. Adjust if needed
+3. Copy to `config/mappings.json`
+4. Import with: `excel-to-sql import --file file.xlsx --type type_name`
+
+## See Also
+
+- [Auto-Pilot documentation](/docs/auto-pilot) - Complete Auto-Pilot guide
+- [Pattern Detection](/docs/auto-pilot/pattern-detection) - Detection algorithms
+- [Quality Scoring](/docs/auto-pilot/quality-scoring) - Quality analysis
+- [Recommendations](/docs/auto-pilot/recommendations) - Auto-fix capabilities

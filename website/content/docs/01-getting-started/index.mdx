@@ -1,130 +1,90 @@
 ---
 title: Getting Started
-description: Get started with excel-to-sql in minutes
+description: Quick introduction to excel-to-sql
 sidebar:
   order: 1
 ---
 
-import { Steps, Step } from 'fumadocs-ui/components/steps';
-import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
 
 # Getting Started
 
-Welcome to **excel-to-sql**, a powerful CLI tool and Python SDK for importing Excel files into SQLite databases with advanced data transformation, validation, and quality profiling features.
+Welcome to **excel-to-sql** - a powerful CLI tool and Python SDK for importing Excel files into SQLite databases with advanced data transformation, validation, and quality profiling.
 
-## What is excel-to-sql?
+## Quick Installation
 
-excel-to-sql simplifies the process of importing Excel data into SQLite databases. It provides:
+<Callout type="info">
+  **Requirements**: Python 3.10 or higher
+</Callout>
 
-<Cards>
-  <Card title="Smart Import" icon="sparkles">
-    Automatic schema detection with intelligent type inference
-  </Card>
-  <Card title="Auto-Pilot Mode" icon="zap">
-    Zero-configuration setup with pattern detection and quality scoring
-  </Card>
-  <Card title="Data Transformations" icon="settings">
-    Value mappings, calculated columns, and custom hooks
-  </Card>
-  <Card title="Quality Analysis" icon="chart">
-    Comprehensive validation with detailed HTML reports
-  </Card>
-  <Card title="Python SDK" icon="code">
-    Full programmatic access for automation and integration
-  </Card>
-  <Card title="Rich CLI" icon="terminal">
-    Beautiful terminal output with progress tracking
-  </Card>
-</Cards>
+```bash
+pip install excel-to-sql
+```
 
-## Key Features
-
-### 1. Auto-Pilot Mode ⭐
-The **star feature** of excel-to-sql. Automatically detects:
-- Primary and foreign keys
-- Value mappings (e.g., "1"/"0" → "Active"/"Inactive")
-- Data quality issues with actionable recommendations
-- Optimal data types for each column
-- French code translation (ENTRÉE→inbound, SORTIE→outbound)
-
-### 2. Flexible Transformations
-- **Value Mappings**: Transform codes into human-readable values
-- **Calculated Columns**: Create derived columns using SQL expressions
-- **Validation Rules**: Ensure data integrity with 7+ validator types
-- **Custom Hooks**: Execute code before/after import and export
-
-### 3. Data Quality Profiling
-- Multi-dimensional quality scoring (0-100) with letter grades (A-D)
-- Issue detection: null values, duplicates, type mismatches
-- Statistical analysis: value distributions, outliers
-- Exportable HTML quality reports
-
-### 4. Python SDK
-Complete programmatic access for:
-- Automation workflows
-- CI/CD integration
-- Custom data pipelines
-- Batch processing
-
-## Who Should Use excel-to-sql?
-
-### Perfect For:
-- **Data Analysts**: Clean and validate Excel data before analysis
-- **Developers**: Build data-driven applications with SQLite backends
-- **Data Engineers**: ETL workflows for Excel data migration
-- **QA Engineers**: Validate data quality in Excel exports
-- **Researchers**: Convert research data from Excel to SQL databases
-
-### Use Cases:
-- Import product catalogs from suppliers
-- Migrate legacy systems to modern databases
-- Validate data quality in Excel reports
-- Build automated data pipelines
-- Create data warehouses from Excel sources
-
-## Installation Options
-
-excel-to-sql can be installed in multiple ways depending on your needs:
-
-<Steps>
-  <Step>**Using pip** (recommended for most users)<br />`pip install excel-to-sql`</Step>
-  <Step>**Using uv** (faster, modern package manager)<br />`uv pip install excel-to-sql`</Step>
-  <Step>**From source** (for development)<br />`git clone https://github.com/wareflowx/excel-to-sql.git`</Step>
-</Steps>
-
-## What's Next?
-
-Choose your path:
-
-- **Quick Start**: Get your first Excel file imported in 5 minutes
-- **Installation Guide**: Detailed installation instructions for all environments
-- **Basic Concepts**: Understand the core concepts and terminology
-- **Project Structure**: Learn about generated files and directories
-
-## Requirements
-
-- **Python**: 3.10 or higher
-- **Operating System**: Windows, macOS, or Linux
-- **Dependencies**: Automatically installed with the package
-
-## Support & Community
-
-- **Documentation**: You're here! 🎉
-- **GitHub Issues**: Report bugs and request features
-- **PyPI Package**: https://pypi.org/project/excel-to-sql/
-- **Repository**: https://github.com/wareflowx/excel-to-sql
-
-## Version
-
-Current version: **0.4.1** (latest)
-
-Check your version:
+Verify installation:
 ```bash
 excel-to-sql version
 ```
 
-Or in Python:
-```python
-import excel_to_sql
-print(excel_to_sql.__version__)
+## Your First Import in 3 Steps
+
+### Step 1: Initialize Project
+
+```bash
+excel-to-sql init
 ```
+
+This creates the project structure with `data/`, `config/`, `imports/`, and `exports/` directories.
+
+### Step 2: Add Configuration
+
+```bash
+excel-to-sql config add --type products --table products --pk id
+```
+
+### Step 3: Import Your Excel File
+
+```bash
+excel-to-sql import --file products.xlsx --type products
+```
+
+That's it! Your data is now in SQLite.
+
+## Auto-Pilot Mode (Recommended)
+
+For automatic configuration without manual setup:
+
+```bash
+excel-to-sql magic --data ./excels --interactive
+```
+
+Auto-Pilot automatically detects:
+- Primary and foreign keys
+- Value mappings (e.g., "1"/"0" → "Active"/"Inactive")
+- Data quality issues
+- Optimal data types
+
+## What's Next?
+
+- **[CLI Reference](/docs/cli-reference)** - All CLI commands
+- **[Auto-Pilot Mode](/docs/auto-pilot)** - Automatic configuration guide
+- **[Python SDK](/docs/python-sdk)** - Programmatic usage
+- **[Examples](/docs/examples)** - Real-world examples
+
+## Key Features
+
+- **Smart Import**: Automatic schema detection
+- **Auto-Pilot Mode**: Zero-configuration setup with pattern detection
+- **Data Transformations**: Value mappings, calculated columns
+- **Quality Analysis**: Comprehensive scoring and reporting
+- **Python SDK**: Full programmatic access
+- **Validation**: Ensure data integrity with rules
+
+## Get Help
+
+```bash
+excel-to-sql --help
+excel-to-sql <command> --help
+```
+
+Or visit: https://github.com/wareflowx/excel-to-sql/issues

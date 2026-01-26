@@ -1,0 +1,204 @@
+---
+title: Pattern Detection
+description: How Auto-Pilot detects patterns in your data
+sidebar:
+  order: 21
+---
+
+# Pattern Detection
+
+Auto-Pilot's pattern detection automatically analyzes your Excel files and identifies data patterns.
+
+## What Gets Detected
+
+### 1. Primary Keys
+
+Identifies columns that uniquely identify rows:
+
+**Detection Algorithm:**
+1. Check for columns named: id, ID, pk, PK, key, KEY
+2. Analyze uniqueness: 100% unique values = candidate
+3. Check for reasonable cardinality (not too high, not too low)
+4. Verify data type consistency
+
+**Example:**
+```python
+# Detected: ID column as primary key
+"primary_key": ["id"]
+```
+
+**Confidence Score:** 0.95 (High)
+
+### 2. Foreign Keys
+
+Detects relationships between tables:
+
+**Detection Algorithm:**
+1. Look for columns ending in: _id, _ID, id_, ID_
+2. Check if values reference other tables
+3. Analyze naming patterns (customer_id → customers.id)
+4. Validate referential integrity
+
+**Example:**
+```python
+# Detected: customer_id references customers.id
+"foreign_keys": [{
+  "column": "customer_id",
+  "references": "customers.id",
+  "confidence": 0.87
+}]
+```
+
+### 3. Value Mappings
+
+Finds columns with repeating code patterns:
+
+**Detection Algorithm:**
+1. Analyze unique value count (< 20 = candidate)
+2. Check for numeric codes (0/1, 1/2/3)
+3. Detect binary patterns (T/F, Y/N, Yes/No)
+4. Find French codes (ENTRÉE/SORTIE, ACTIF/INACTIF)
+5. Calculate mapping confidence
+
+**Examples:**
+
+**Binary Status:**
+```python
+{
+  "column": "status",
+  "mappings": {
+    "1": "Active",
+    "0": "Inactive"
+  },
+  "confidence": 0.92
+}
+```
+
+**French Codes:**
+```python
+{
+  "column": "movement_type",
+  "mappings": {
+    "ENTRÉE": "inbound",
+    "SORTIE": "outbound",
+    "ACTIF": "active",
+    "INACTIF": "inactive"
+  },
+  "detected_language": "french",
+  "confidence": 0.98
+}
+```
+
+### 4. Split Fields
+
+Identifies redundant status columns that should be combined:
+
+**Detection Algorithm:**
+1. Find columns with overlapping values
+2. Detect mutual exclusivity (if col1 has value, col2 is null)
+3. Calculate COALESCE potential
+4. Recommend combination
+
+**Example:**
+```python
+# Detected: status_active and status_inactive are redundant
+{
+  "split_fields": [{
+    "columns": ["status_active", "status_inactive"],
+    "recommendation": "COALESCE(status_active, status_inactive) as status",
+    "confidence": 0.89
+  }]
+}
+```
+
+### 5. Data Types
+
+Infers optimal SQL types from actual data:
+
+**Type Inference:**
+```python
+# Integer detection
+if all_values.isdigit():
+    type = "integer"
+
+# Float detection
+elif contains_decimal and is_numeric():
+    type = "float"
+
+# Boolean detection
+elif unique_values == [0, 1] or unique_values == ["0", "1"]:
+    type = "boolean"
+
+# Date detection
+elif matches_iso8601_pattern():
+    type = "date"
+
+# Default
+else:
+    type = "string"
+```
+
+**Examples:**
+```python
+{
+  "id": {"type": "integer", "confidence": 0.99},
+  "price": {"type": "float", "confidence": 0.97},
+  "active": {"type": "boolean", "confidence": 0.94},
+  "created_at": {"type": "date", "confidence": 0.91},
+  "name": {"type": "string", "confidence": 0.85}
+}
+```
+
+## Confidence Scores
+
+Each detection includes a confidence score (0-1):
+
+| Score | Meaning | Action |
+|-------|---------|--------|
+| 0.90-1.00 | Very High | Auto-accept |
+| 0.70-0.89 | High | Review recommended |
+| 0.50-0.69 | Medium | Manual review |
+| 0.00-0.49 | Low | Manual configuration |
+
+## Interactive Review
+
+In interactive mode, you'll see:
+
+```
+✓ Detected Primary Key
+  Column: id
+  Confidence: 0.95
+  Unique values: 150/150 (100%)
+  Accept? [Y/n]:
+```
+
+## Override Detections
+
+You can override any detection:
+
+```bash
+# Auto-Pilot suggests id as PK, but you want product_id
+excel-to-sql magic --data . --interactive
+# When prompted, enter product_id instead
+```
+
+## Advanced: Python SDK
+
+Use pattern detection programmatically:
+
+```python
+from excel_to_sql.auto_pilot import PatternDetector
+
+detector = PatternDetector()
+patterns = detector.detect_patterns(df, "products")
+
+print(f"Primary Key: {patterns['primary_key']}")
+print(f"Foreign Keys: {patterns['foreign_keys']}")
+print(f"Value Mappings: {patterns['value_mappings']}")
+```
+
+## See Also
+
+- [Quality Scoring](/docs/auto-pilot/quality-scoring) - Data quality analysis
+- [Recommendations](/docs/auto-pilot/recommendations) - Actionable suggestions
+- [CLI: magic command](/docs/cli-reference/magic) - Auto-Pilot usage

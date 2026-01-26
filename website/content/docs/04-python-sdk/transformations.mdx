@@ -1,0 +1,232 @@
+---
+title: Transformations
+description: Value mappings and calculated columns
+sidebar:
+  order: 31
+---
+
+# Transformations
+
+Transform your data during import with value mappings and calculated columns.
+
+## Value Mappings
+
+Transform cell values during import.
+
+### Basic Value Mapping
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Simple mapping
+result = sdk.import_excel(
+    "products.xlsx",
+    "products",
+    value_mappings={
+        "status": {
+            "1": "Active",
+            "0": "Inactive"
+        }
+    }
+)
+```
+
+### Multiple Value Mappings
+
+```python
+value_mappings = {
+    "status": {
+        "1": "Active",
+        "0": "Inactive",
+        "P": "Pending"
+    },
+    "category_code": {
+        "E": "Electronics",
+        "H": "Hardware",
+        "S": "Software"
+    }
+}
+
+result = sdk.import_excel(
+    "products.xlsx",
+    "products",
+    value_mappings=value_mappings
+)
+```
+
+### French Code Translation
+
+Auto-detected by Auto-Pilot, but can be manual:
+
+```python
+value_mappings = {
+    "movement_type": {
+        "ENTRÉE": "inbound",
+        "SORTIE": "outbound",
+        "ACTIF": "active",
+        "INACTIF": "inactive"
+    }
+}
+```
+
+## Calculated Columns
+
+Create new columns based on SQL expressions.
+
+### Basic Calculated Column
+
+```python
+from excel_to_sql.transformations import CalculatedColumn
+
+result = sdk.import_excel(
+    "orders.xlsx",
+    "orders",
+    calculated_columns=[
+        CalculatedColumn("total", "quantity * price")
+    ]
+)
+```
+
+### Multiple Calculated Columns
+
+```python
+calculated_columns = [
+    CalculatedColumn("subtotal", "quantity * price"),
+    CalculatedColumn("tax", "subtotal * 0.1"),
+    CalculatedColumn("total", "subtotal + tax")
+]
+
+result = sdk.import_excel(
+    "orders.xlsx",
+    "orders",
+    calculated_columns=calculated_columns
+)
+```
+
+### String Operations
+
+```python
+calculated_columns = [
+    CalculatedColumn("full_name", "first_name || ' ' || last_name"),
+    CalculatedColumn("email", "lower(first_name || '.' || last_name || '@company.com')")
+]
+```
+
+### Date Operations
+
+```python
+calculated_columns = [
+    CalculatedColumn("days_old", "julianday('now') - julianday(order_date)"),
+    CalculatedColumn("is_recent", "CASE WHEN order_date >= date('now', '-7 days') THEN 1 ELSE 0 END")
+]
+```
+
+## Configuration File
+
+Set up transformations in `config/mappings.json`:
+
+```json
+{
+  "orders": {
+    "target_table": "orders",
+    "primary_key": ["id"],
+    "column_mappings": {
+      "Order ID": {"target": "id", "type": "integer"},
+      "Product ID": {"target": "product_id", "type": "integer"},
+      "Quantity": {"target": "quantity", "type": "integer"},
+      "Price": {"target": "price", "type": "float"}
+    },
+    "value_mappings": [
+      {
+        "column": "status",
+        "mappings": {"1": "Active", "0": "Inactive"}
+      }
+    ],
+    "calculated_columns": [
+      {
+        "name": "total",
+        "expression": "quantity * price"
+      },
+      {
+        "name": "tax",
+        "expression": "total * 0.1"
+      },
+      {
+        "name": "grand_total",
+        "expression": "total + tax"
+      }
+    ]
+  }
+}
+```
+
+## Advanced Transformations
+
+### Conditional Mapping
+
+```python
+value_mappings = {
+    "priority": {
+        "1": "High",
+        "2": "Medium",
+        "3": "Low",
+        None: "Unknown"  # Default for null values
+    }
+}
+```
+
+### Complex Calculations
+
+```python
+calculated_columns = [
+    CalculatedColumn(
+        "profit_margin",
+        "((price - cost) / price) * 100"
+    ),
+    CalculatedColumn(
+        "shipping_estimate",
+        "CASE WHEN weight < 1 THEN 5 WHEN weight < 5 THEN 10 ELSE 20 END"
+    )
+]
+```
+
+## Best Practices
+
+### 1. Use Descriptive Names
+
+```python
+# Good
+CalculatedColumn("total_amount", "quantity * unit_price")
+
+# Avoid
+CalculatedColumn("x", "a * b")
+```
+
+### 2. Test Expressions
+
+```python
+# Test your calculated column expressions
+df = sdk.query("SELECT quantity, price, quantity * price as total FROM orders LIMIT 5")
+print(df)
+```
+
+### 3. Order Matters
+
+Calculated columns can reference earlier calculated columns:
+
+```python
+# Correct: total depends on subtotal and tax
+calculated_columns = [
+    CalculatedColumn("subtotal", "quantity * price"),
+    CalculatedColumn("tax", "subtotal * 0.1"),
+    CalculatedColumn("total", "subtotal + tax")
+]
+```
+
+## See Also
+
+- [Validators](/docs/python-sdk/validators) - Data validation
+- [Profiling](/docs/python-sdk/profiling) - Quality analysis
+- [Configuration](/docs/configuration) - Configuration file structure

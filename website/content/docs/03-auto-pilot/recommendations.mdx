@@ -1,0 +1,274 @@
+---
+title: Recommendations
+description: Auto-fix capabilities and recommendations
+sidebar:
+  order: 23
+---
+
+# Recommendations
+
+Auto-Pilot generates prioritized, actionable recommendations to improve your data quality.
+
+## Priority Levels
+
+### HIGH Priority
+
+**Critical issues affecting data integrity:**
+
+- Null values in primary key columns
+- Duplicate primary keys
+- Type mismatches \>10%
+- Invalid foreign key references
+
+**Example:**
+```json
+{
+  "priority": "HIGH",
+  "issue": "Null values in primary key",
+  "column": "id",
+  "null_count": 15,
+  "recommendation": "Remove rows with null id values",
+  "auto_fixable": true
+}
+```
+
+### MEDIUM Priority
+
+**Quality improvements:**
+
+- Null values 5-10%
+- Some format violations
+- Detected outliers
+
+**Example:**
+```json
+{
+  "priority": "MEDIUM",
+  "issue": "Invalid email format",
+  "column": "email",
+  "affected_rows": 12,
+  "recommendation": "Validate email format or fix invalid entries",
+  "auto_fixable": false
+}
+```
+
+### LOW Priority
+
+**Nice-to-have optimizations:**
+
+- Naming conventions
+- Minor formatting
+- Slight inconsistencies
+
+**Example:**
+```json
+{
+  "priority": "LOW",
+  "issue": "Column name has spaces",
+  "column": "Product Name",
+  "recommendation": "Rename to 'product_name' for SQL compatibility",
+  "auto_fixable": true
+}
+```
+
+## Auto-Fixable Issues
+
+Auto-Pilot can automatically fix some issues:
+
+### 1. French Code Translation
+
+```python
+# Before: ENTRÉE, SORTIE, ACTIF, INACTIF
+# After: inbound, outbound, active, inactive
+
+{
+  "auto_fix": {
+    "column": "movement_type",
+    "type": "french_translation",
+    "mappings": {
+      "ENTRÉE": "inbound",
+      "SORTIE": "outbound",
+      "ACTIF": "active",
+      "INACTIF": "inactive",
+      "EN_STOCK": "in_stock",
+      "HORS_STOCK": "out_of_stock"
+    }
+  }
+}
+```
+
+### 2. Null Value Default
+
+```python
+{
+  "auto_fix": {
+    "column": "status",
+    "type": "default_value",
+    "value": "unknown",
+    "condition": "null"
+  }
+}
+```
+
+### 3. Split Fields
+
+```python
+# Before: status_active, status_inactive
+# After: COALESCE(status_active, status_inactive) as status
+
+{
+  "auto_fix": {
+    "type": "coalesce",
+    "columns": ["status_active", "status_inactive"],
+    "target": "status"
+  }
+}
+```
+
+## Apply Recommendations
+
+### Interactive Mode
+
+```bash
+excel-to-sql magic --data . --interactive
+```
+
+You'll see recommendations and can choose to:
+- **Accept all auto-fixes**
+- **Review individually**
+- **Skip** specific recommendations
+
+### Manual Application
+
+Edit `.excel-to-sql/mappings.json` to apply recommendations:
+
+```json
+{
+  "value_mappings": [
+    {
+      "column": "status",
+      "mappings": {"0": "Inactive", "1": "Active"}
+    }
+  ],
+  "calculated_columns": [
+    {
+      "name": "full_name",
+      "expression": "first_name || ' ' || last_name"
+    }
+  ]
+}
+```
+
+## Recommendation Engine
+
+The recommendation engine analyzes:
+
+**1. Pattern Detection Results**
+- Primary key quality
+- Foreign key validity
+- Value mapping opportunities
+
+**2. Quality Analysis**
+- Score by dimension
+- Issue distribution
+- Column-level problems
+
+**3. Best Practices**
+- SQL standards compliance
+- Naming conventions
+- Data modeling principles
+
+## Recommendation Format
+
+```json
+{
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "category": "data_integrity",
+      "issue": "Duplicate primary keys detected",
+      "table": "products",
+      "column": "id",
+      "duplicate_count": 3,
+      "recommendation": "Remove duplicate rows or use composite key",
+      "auto_fixable": true,
+      "confidence": 0.95
+    },
+    {
+      "priority": "MEDIUM",
+      "category": "quality",
+      "issue": "Null values in critical column",
+      "table": "products",
+      "column": "email",
+      "null_percentage": 8.5,
+      "recommendation": "Fill null values with 'unknown' or remove rows",
+      "auto_fixable": true,
+      "confidence": 0.87
+    }
+  ]
+}
+```
+
+## Ignore Recommendations
+
+You can choose to ignore specific recommendations:
+
+```bash
+# In interactive mode, choose "Skip" when prompted
+# Or manually edit the config to skip certain fixes
+```
+
+## Best Practices
+
+### 1. Review HIGH Priority First
+
+Always address HIGH priority issues before importing:
+- Data integrity problems
+- Critical validation failures
+- Duplicate keys
+
+### 2. Test Auto-Fixes
+
+Auto-fixes create backups automatically:
+```bash
+.excel-to-sql/backups/file_YYYYMMDD_HHMMSS.xlsx.bak
+```
+
+Test the fix, then revert if needed:
+```bash
+# Restore from backup
+cp .excel-to-sql/backups/file_20250126_120000.xlsx.bak original.xlsx
+```
+
+### 3. Progressive Application
+
+Apply recommendations in stages:
+1. Fix HIGH priority issues
+2. Import and verify
+3. Fix MEDIUM priority
+4. Import and verify
+5. Address LOW priority if time permits
+
+## Example Workflow
+
+```bash
+# 1. Run Auto-Pilot
+excel-to-sql magic --data . --interactive
+
+# 2. Review recommendations
+# [Accept] Fix French codes
+# [Accept] Fill null values
+# [Skip] Rename columns (LOW priority)
+
+# 3. Import with fixes
+excel-to-sql import --file products.xlsx --type products
+
+# 4. Verify quality
+excel-to-sql profile --table products --output quality.html
+```
+
+## See Also
+
+- [Pattern Detection](/docs/auto-pilot/pattern-detection) - Detection algorithms
+- [Quality Scoring](/docs/auto-pilot/quality-scoring) - Quality analysis
+- [Auto-Fixer](/docs/auto-pilot/auto-fixer) - Auto-fix implementation

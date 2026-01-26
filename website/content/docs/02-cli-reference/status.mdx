@@ -1,0 +1,174 @@
+---
+title: status Command
+description: View import history
+sidebar:
+  order: 16
+---
+
+# status Command
+
+Show import history and statistics.
+
+## Usage
+
+```bash
+excel-to-sql status
+```
+
+## Output
+
+```
+Import History:
+┌──────────────┬──────────┬────────┬────────────────┬─────────────┐
+│ Date         │ Type     │ Rows   │ File           │ Tags        │
+├──────────────┼──────────┼────────┼────────────────┼─────────────┤
+│ 2025-01-26   │ products │ 150    │ products.xlsx  │ catalog    │
+│ 2025-01-25   │ orders   │ 1,250  │ orders.xlsx    │ verified   │
+│ 2025-01-24   │ customers│ 500    │ customers.xlsx │            │
+└──────────────┴──────────┴────────┴────────────────┴─────────────┘
+
+Total Imports: 3
+Total Rows: 1,900
+```
+
+## Information Displayed
+
+- **Date**: When the import occurred
+- **Type**: Type configuration used
+- **Rows**: Number of rows imported
+- **File**: Original Excel filename
+- **Tags**: Import tags (if any)
+
+## Filters
+
+### View Specific Type
+
+Not directly supported via CLI, but you can query the database:
+
+```bash
+sqlite3 data/database.db "SELECT * FROM __excel_to_sql_imports WHERE type_name = 'products'"
+```
+
+### View Recent Imports
+
+```bash
+sqlite3 data/database.db "
+SELECT * FROM __excel_to_sql_imports
+ORDER BY imported_at DESC
+LIMIT 10
+"
+```
+
+## Metadata Tables
+
+excel-to-sql stores metadata in internal tables:
+
+### __excel_to_sql_imports
+
+```sql
+CREATE TABLE __excel_to_sql_imports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type_name TEXT NOT NULL,
+  file_name TEXT,
+  rows_imported INTEGER,
+  content_hash TEXT,
+  imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  tags TEXT
+);
+```
+
+### __excel_to_sql_metadata
+
+```sql
+CREATE TABLE __excel_to_sql_metadata (
+  key TEXT PRIMARY KEY,
+  value TEXT,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## Query Examples
+
+### Using SQLite CLI
+
+```bash
+sqlite3 data/database.db
+```
+
+```sql
+-- View last 10 imports
+SELECT * FROM __excel_to_sql_imports
+ORDER BY imported_at DESC
+LIMIT 10;
+
+-- Count imports by type
+SELECT type_name, COUNT(*) as count
+FROM __excel_to_sql_imports
+GROUP BY type_name;
+
+-- Find largest imports
+SELECT type_name, rows_imported
+FROM __excel_to_sql_imports
+ORDER BY rows_imported DESC
+LIMIT 10;
+```
+
+### Using Python SDK
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Get import history
+history = sdk.get_import_history()
+for record in history:
+    print(f"{record['type_name']}: {record['rows_imported']} rows")
+```
+
+## Clear History
+
+To clear import history:
+
+```bash
+sqlite3 data/database.db "DELETE FROM __excel_to_sql_imports"
+```
+
+<Callout type="warning">
+  **Warning**: Clearing history is permanent. Consider backing up the database first.
+</Callout>
+
+## Statistics
+
+### Total Import Statistics
+
+```bash
+sqlite3 data/database.db "
+SELECT
+  COUNT(*) as total_imports,
+  SUM(rows_imported) as total_rows,
+  AVG(rows_imported) as avg_rows
+FROM __excel_to_sql_imports
+"
+```
+
+### By Date Range
+
+```bash
+sqlite3 data/database.db "
+SELECT
+  DATE(imported_at) as date,
+  COUNT(*) as imports,
+  SUM(rows_imported) as rows
+FROM __excel_to_sql_imports
+WHERE imported_at >= date('now', '-7 days')
+GROUP BY DATE(imported_at)
+ORDER BY date DESC
+"
+```
+
+## See Also
+
+- [import command](/docs/cli-reference/import) - Import data
+- [Python SDK](/docs/python-sdk) - Programmatic access
+- [project structure](/docs/getting-started/project-structure) - Database schema

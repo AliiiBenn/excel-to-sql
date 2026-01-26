@@ -1,0 +1,115 @@
+---
+title: import Command
+description: Import Excel files into SQLite
+sidebar:
+  order: 12
+---
+
+# import Command
+
+Import an Excel file into the SQLite database.
+
+## Usage
+
+```bash
+excel-to-sql import --file FILE --type TYPE
+```
+
+## Required Options
+
+```bash
+-f, --file TEXT      Path to Excel file (required)
+-t, --type TEXT      Type configuration name (required)
+```
+
+## Optional Options
+
+```bash
+--force              Re-import even if content unchanged
+--verbose, -v        Show detailed import progress
+```
+
+## Examples
+
+### Basic Import
+
+```bash
+excel-to-sql import --file products.xlsx --type products
+```
+
+### Import with Full Path
+
+```bash
+excel-to-sql import --file /path/to/data.xlsx --type mytype
+```
+
+### Force Re-import
+
+```bash
+excel-to-sql import --file products.xlsx --type products --force
+```
+
+## What Happens During Import
+
+1. **Read Excel File**: Loads using openpyxl
+2. **Apply Column Mappings**: Transform column names and types
+3. **Apply Value Mappings**: Transform cell values
+4. **Calculate Columns**: Create derived columns
+5. **Validate Data**: Check against validation rules
+6. **UPSERT**: Insert new rows or update existing rows
+7. **Store Metadata**: Record import in history
+
+## Output
+
+```
+✓ Loading Excel file: products.xlsx
+✓ Found sheet: Sheet1
+✓ Applying column mappings...
+✓ Applying value mappings...
+✓ Importing 150 rows into table 'products'
+✓ Import completed in 0.23s
+```
+
+## Import History
+
+View import history:
+
+```bash
+excel-to-sql status
+```
+
+## Error Handling
+
+### Common Errors
+
+**"Type configuration not found"**
+```bash
+# Create the type first
+excel-to-sql config add --type products --table products --pk id
+```
+
+**"Primary key column not found"**
+```bash
+# Check your Excel file has the primary key column
+# Or update the config with the correct column name
+```
+
+**"File not found"**
+```bash
+# Use absolute path
+excel-to-sql import --file /full/path/to/file.xlsx --type products
+```
+
+## Incremental Imports
+
+excel-to-sql uses content hashing to detect changes. If the file content hasn't changed, the import is skipped (unless `--force` is used).
+
+<Callout type="info">
+  **Performance**: Large files (10,000+ rows) may take longer. Use `--force` only when necessary.
+</Callout>
+
+## See Also
+
+- [export command](/docs/cli-reference/export) - Export data back to Excel
+- [config command](/docs/cli-reference/config) - Configure types
+- [Auto-Pilot mode](/docs/auto-pilot) - Auto-generate configurations

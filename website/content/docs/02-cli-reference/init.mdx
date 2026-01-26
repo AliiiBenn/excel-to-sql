@@ -1,0 +1,77 @@
+---
+title: init Command
+description: Initialize project structure
+sidebar:
+  order: 11
+---
+
+# init Command
+
+Initialize a new excel-to-sql project with the required directory structure.
+
+## Usage
+
+```bash
+excel-to-sql init
+```
+
+## What It Creates
+
+```
+my-project/
+├── data/
+│   └── database.db          # SQLite database
+├── config/
+│   └── mappings.json        # Type configurations
+├── imports/                 # Original Excel files
+└── exports/                 # Exported Excel files
+```
+
+## Examples
+
+### Initialize in Current Directory
+
+```bash
+excel-to-sql init
+```
+
+### Initialize with Custom Location
+
+```bash
+mkdir my-project
+cd my-project
+excel-to-sql init
+```
+
+## After Initialization
+
+1. Add a type configuration:
+```bash
+excel-to-sql config add --type products --table products --pk id
+```
+
+2. Import your Excel file:
+```bash
+excel-to-sql import --file products.xlsx --type products
+```
+
+## Database
+
+The `data/database.db` file is created automatically. It contains:
+- Your data tables
+- Import history metadata
+- Quality analysis data
+
+<Callout type="warning">
+  **Important**: Don't delete the `data/database.db` file unless you want to lose all imported data.
+</Callout>
+
+## Configuration File
+
+`config/mappings.json` stores your type configurations. This file is meant to be edited manually or via the `config` command.
+
+## See Also
+
+- [config command](/docs/cli-reference/config) - Manage configurations
+- [import command](/docs/cli-reference/import) - Import data
+- [project structure](/docs/getting-started/project-structure) - File organization

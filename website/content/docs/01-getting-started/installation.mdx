@@ -1,378 +1,67 @@
 ---
 title: Installation
-description: Install excel-to-sql using pip, uv, or from source
+description: Install excel-to-sql
 sidebar:
   order: 2
 ---
 
-import { Steps, Step } from 'fumadocs-ui/components/steps';
-import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
-import { Callout } from 'fumadocs-ui/components/callout';
-
 # Installation
 
-Install excel-to-sql using your preferred method. Choose the one that best fits your workflow.
-
-## Prerequisites
-
-Before installing excel-to-sql, ensure you have:
-
-- **Python 3.10 or higher** installed
-- **pip** (comes with Python) or **uv** (modern package manager)
-- **Git** (if installing from source)
-
-<Callout type="info">
-  Check your Python version:
-  ```bash
-  python --version
-  # or
-  python3 --version
-  ```
-</Callout>
-
-## Installation Methods
-
-<Tabs items={['pip', 'uv', 'From Source']}>
-
-  <Tab value="pip">
-
-    ### Using pip (Recommended)
-
-    pip is the standard package installer for Python and comes pre-installed with Python.
-
-    #### Installation
-
-    ```bash
-    pip install excel-to-sql
-    ```
-
-    #### Verify Installation
-
-    ```bash
-    excel-to-sql version
-    ```
-
-    Expected output:
-    ```
-    excel-to-sql v0.4.1
-    ```
-
-    #### Upgrade to Latest Version
-
-    ```bash
-    pip install --upgrade excel-to-sql
-    ```
-
-    #### Advantages
-    - Standard Python package manager
-    - Widely supported
-    - Automatic dependency resolution
-    - Works in virtual environments
-
-  </Tab>
-
-  <Tab value="uv">
-
-    ### Using uv (Faster)
-
-    [uv](https://github.com/astral-sh/uv) is a modern Python package manager written in Rust, much faster than pip.
-
-    #### Install uv First
-
-    ```bash
-    # On macOS and Linux
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-
-    # On Windows
-    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-    ```
-
-    #### Install excel-to-sql
-
-    ```bash
-    uv pip install excel-to-sql
-    ```
-
-    #### Verify Installation
-
-    ```bash
-    excel-to-sql version
-    ```
-
-    #### Upgrade to Latest Version
-
-    ```bash
-    uv pip install --upgrade excel-to-sql
-    ```
-
-    #### Advantages
-    - 10-100x faster than pip
-    - Modern, actively developed
-    - Better dependency resolution
-    - Compatible with pip workflows
-
-  </Tab>
-
-  <Tab value="From Source">
-
-    ### Installing from Source
-
-    Install from source for development or to get the latest features.
-
-    #### Clone the Repository
-
-    ```bash
-    git clone https://github.com/wareflowx/excel-to-sql.git
-    cd excel-to-sql
-    ```
-
-    #### Install in Editable Mode
-
-    Using pip:
-    ```bash
-    pip install -e .
-    ```
-
-    Using uv:
-    ```bash
-    uv pip install -e .
-    ```
-
-    #### Install with Development Dependencies
-
-    ```bash
-    pip install -e ".[dev]"
-    # or
-    uv pip install -e ".[dev]"
-    ```
-
-    This installs additional tools for development:
-    - pytest (testing framework)
-    - pytest-cov (coverage reporting)
-
-    #### Verify Installation
-
-    ```bash
-    excel-to-sql version
-    ```
-
-    #### Advantages
-    - Access to latest features
-    - Edit code and see changes immediately
-    - Contribute to the project
-    - Run tests and examples
-
-  </Tab>
-</Tabs>
-
-## System-Specific Notes
-
-### Windows
-
-<Steps>
-  <Step>
-    **Install Python** from [python.org](https://www.python.org/downloads/) or use the [Microsoft Store](https://apps.microsoft.com/store/detail/python-3-11/9NRWMJP3717K)
-  </Step>
-  <Step>
-    **Check "Add Python to PATH"** during installation
-  </Step>
-  <Step>
-    **Restart your terminal** after installation
-  </Step>
-  <Step>
-    **Install excel-to-sql**:
-    ```cmd
-    pip install excel-to-sql
-    ```
-  </Step>
-  <Step>
-    **Verify**:
-    ```cmd
-    excel-to-sql version
-    ```
-  </Step>
-</Steps>
-
-### macOS
-
-<Steps>
-  <Step>
-    **Install Homebrew** (if not installed):
-    ```bash
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    ```
-  </Step>
-  <Step>
-    **Install Python**:
-    ```bash
-    brew install python@3.11
-    ```
-  </Step>
-  <Step>
-    **Install excel-to-sql**:
-    ```bash
-    pip3 install excel-to-sql
-    ```
-  </Step>
-  <Step>
-    **Verify**:
-    ```bash
-    excel-to-sql version
-    ```
-  </Step>
-</Steps>
-
-### Linux (Ubuntu/Debian)
-
-<Steps>
-  <Step>
-    **Update package list**:
-    ```bash
-    sudo apt update
-    ```
-  </Step>
-  <Step>
-    **Install Python and pip**:
-    ```bash
-    sudo apt install python3 python3-pip python3-venv
-    ```
-  </Step>
-  <Step>
-    **Install excel-to-sql**:
-    ```bash
-    pip3 install excel-to-sql
-    ```
-  </Step>
-  <Step>
-    **Verify**:
-    ```bash
-    excel-to-sql version
-    ```
-  </Step>
-</Steps>
-
-## Virtual Environments (Recommended)
-
-Using a virtual environment keeps your dependencies isolated and prevents conflicts.
-
-### Using venv (Built-in)
+## Using pip (Recommended)
 
 ```bash
-# Create virtual environment
-python -m venv .venv
-
-# Activate virtual environment
-# On Windows:
-.venv\Scripts\activate
-# On macOS/Linux:
-source .venv/bin/activate
-
-# Install excel-to-sql
 pip install excel-to-sql
-
-# When done, deactivate:
-deactivate
 ```
 
-### Using uv (Faster)
+## Using uv (Faster)
 
 ```bash
-# Create virtual environment
-uv venv
-
-# Activate virtual environment
-# On Windows:
-.venv\Scripts\activate
-# On macOS/Linux:
-source .venv/bin/activate
-
-# Install excel-to-sql
 uv pip install excel-to-sql
 ```
 
-## Verifying Your Installation
-
-After installation, verify that everything is working correctly:
+## From Source
 
 ```bash
-# Check version
-excel-to-sql version
-
-# See all available commands
-excel-to-sql --help
-
-# Test a specific command
-excel-to-sql init --help
+git clone https://github.com/wareflowx/excel-to-sql.git
+cd excel-to-sql
+pip install -e .
 ```
 
-<Callout type="success">
-  Expected output for `excel-to-sql version`:
-  ```
-  excel-to-sql v0.4.1
-  ```
-</Callout>
+## Verify Installation
+
+```bash
+excel-to-sql version
+# Output: excel-to-sql v0.4.1
+```
 
 ## Python SDK Verification
 
-You can also verify the Python SDK is installed correctly:
-
 ```python
 import excel_to_sql
-print(f"excel-to-sql version: {excel_to_sql.__version__}")
+print(excel_to_sql.__version__)
+```
 
-# Test basic import
-from excel_to_sql import ExcelToSqlite
-print("✓ SDK imported successfully")
+## System Requirements
+
+- **Python**: 3.10 or higher
+- **OS**: Windows, macOS, or Linux
+- **Dependencies**: Automatically installed
+
+## Virtual Environments (Recommended)
+
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install excel-to-sql
 ```
 
 ## Troubleshooting
 
-### "python: command not found"
+**"python: command not found"**
+Use `python3` instead of `python`
 
-- **Windows**: Add Python to your PATH during installation
-- **macOS/Linux**: Use `python3` instead of `python`, or create an alias
+**"Permission denied"**
+Use `pip install --user excel-to-sql`
 
-### "Permission denied" when installing
-
-```bash
-# Use user installation
-pip install --user excel-to-sql
-
-# Or use a virtual environment (recommended)
-python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-pip install excel-to-sql
-```
-
-### "Module not found" errors
-
-```bash
-# Ensure you're in the correct environment
-which python  # macOS/Linux
-where python  # Windows
-
-# Reinstall in the current environment
-pip install --force-reinstall excel-to-sql
-```
-
-### Version conflicts
-
-```bash
-# Check installed version
-pip show excel-to-sql
-
-# Upgrade to latest
-pip install --upgrade excel-to-sql
-
-# Or install specific version
-pip install excel-to-sql==0.4.1
-```
-
-## Next Steps
-
-Now that you have excel-to-sql installed:
-
-- **[Quick Start](/docs/getting-started/quick-start)** - Import your first Excel file in 5 minutes
-- **[Basic Concepts](/docs/getting-started/basic-concepts)** - Understand core concepts
-- **[CLI Reference](/docs/cli-reference)** - Explore all available commands
-- **[Auto-Pilot Mode](/docs/auto-pilot)** - Learn about automatic configuration
+**"Module not found"**
+Ensure you're in the correct virtual environment
