@@ -20,7 +20,7 @@ Finding the right batch size can significantly improve import speed for large fi
 
 <Tabs>
   <Tab value="small">
-    **Small Files (<10K rows)**
+    **Small Files (under 10K rows)**
 
     Import entire file at once for optimal speed.
 
@@ -35,7 +35,7 @@ Finding the right batch size can significantly improve import speed for large fi
     ```
   </Tab>
   <Tab value="medium">
-    **Medium Files (10K-100K rows)**
+    **Medium Files (10K to 100K rows)**
 
     Use chunked imports to balance memory and speed.
 
@@ -59,7 +59,7 @@ Finding the right batch size can significantly improve import speed for large fi
     ```
   </Tab>
   <Tab value="large">
-    **Large Files (>100K rows)**
+    **Large Files (over 100K rows)**
 
     Use streaming with smaller chunks for memory efficiency.
 
