@@ -1,8 +1,7 @@
 {
   "pages": [
-    "index",
+    "introduction/index",
     "---Introduction---",
-    "introduction/quick-start",
     "introduction/what-is-ets",
     "introduction/installation",
     "---CLI Reference---",
