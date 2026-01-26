@@ -1,0 +1,82 @@
+---
+title: What is ETS
+description: Overview of excel-to-sql (ETS)
+icon: FileQuestion
+---
+
+# What is excel-to-sql?
+
+**excel-to-sql (ETS)** is a powerful CLI tool and Python SDK for importing Excel files into SQLite databases with advanced data quality features.
+
+## Key Features
+
+### Excel to SQLite Import
+- Import Excel files (.xlsx, .xls) into SQLite databases
+- Automatic schema detection and table creation
+- Support for multiple sheets and complex data types
+
+### Auto-Pilot Mode
+Zero-configuration import with intelligent pattern detection:
+- Primary key detection
+- Foreign key relationship identification
+- Value mapping discovery (code columns, status fields)
+- Data type optimization
+- Quality scoring with actionable recommendations
+
+### Data Transformations
+- **Value Mappings**: Transform codes (0/1 → Inactive/Active)
+- **Calculated Columns**: Create computed fields (subtotal, tax, total)
+- **French Code Translation**: Auto-translate French codes (ENTRÉE→inbound)
+
+### Data Validation
+- Unique constraints
+- Not null validation
+- Regex pattern matching
+- Range validation
+- Custom validation rules
+
+### Data Quality Profiling
+Multi-dimensional quality scoring (0-100) with letter grades:
+- **Completeness** (30%): Null value analysis
+- **Uniqueness** (25%): Duplicate detection
+- **Validity** (25%): Type and format checking
+- **Consistency** (20%): Value distribution analysis
+
+### Export Capabilities
+- Export tables back to Excel files
+- Custom SQL queries as sheets
+- Multiple format support
+
+## Use Cases
+
+### E-commerce
+Import product catalogs, manage inventory, track orders.
+
+### Data Migration
+Migrate data from Excel-based systems to proper SQL databases.
+
+### Data Quality
+Profile, analyze, and improve data quality with automated recommendations.
+
+### Reporting
+Generate reports by querying SQLite and exporting to Excel.
+
+## Architecture
+
+ETS is built with:
+- **Python**: Core data processing with pandas and openpyxl
+- **SQLite**: Embedded SQL database for queries
+- **Click**: CLI framework
+- **Pydantic**: Data validation
+
+## Installation
+
+```bash
+pip install excel-to-sql
+```
+
+## See Also
+
+- [Quick Start](/docs/introduction/quick-start) - Get started in 5 minutes
+- [Installation](/docs/introduction/installation) - Detailed installation guide
+- [Auto-Pilot Mode](/docs/auto-pilot) - Zero-configuration import

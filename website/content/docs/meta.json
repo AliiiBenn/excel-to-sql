@@ -1,9 +1,10 @@
 {
   "pages": [
     "index",
-    "installation",
-    "---Getting Started---",
-    "getting-started/index",
+    "---Introduction---",
+    "introduction/what-is-ets",
+    "introduction/quick-start",
+    "introduction/installation",
     "---CLI Reference---",
     "cli-reference/config",
     "cli-reference/export",
