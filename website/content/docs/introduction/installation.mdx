@@ -6,17 +6,23 @@ icon: Download
 
 ## Using pip (Recommended)
 
+The standard Python package manager. Works on all platforms and automatically installs all dependencies.
+
 ```bash
 pip install excel-to-sql
 ```
 
 ## Using uv (Faster)
 
+A modern Python package installer written in Rust. Significantly faster than pip for installation and resolution.
+
 ```bash
 uv pip install excel-to-sql
 ```
 
 ## From Source
+
+Install directly from the GitHub repository for development or to access the latest features.
 
 ```bash
 git clone https://github.com/wareflowx/excel-to-sql.git
@@ -26,12 +32,16 @@ pip install -e .
 
 ## Verify Installation
 
+Confirm the installation was successful by checking the version.
+
 ```bash
 excel-to-sql version
 # Output: excel-to-sql v0.4.1
 ```
 
 ## Python SDK Verification
+
+You can also verify the installation from Python code.
 
 ```python
 import excel_to_sql
@@ -45,6 +55,8 @@ print(excel_to_sql.__version__)
 - **Dependencies**: Automatically installed
 
 ## Virtual Environments (Recommended)
+
+Isolate your project dependencies to avoid conflicts with other Python projects.
 
 ```bash
 python -m venv .venv

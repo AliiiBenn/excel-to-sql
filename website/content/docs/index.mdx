@@ -8,6 +8,8 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 ## Quick Installation
 
+Install excel-to-sql using pip, the standard Python package manager.
+
 <Callout type="info">
   **Requirements**: Python 3.10 or higher
 </Callout>
@@ -25,6 +27,8 @@ excel-to-sql version
 
 ### Step 1: Initialize Project
 
+Create a new project with the required directory structure.
+
 ```bash
 excel-to-sql init
 ```
@@ -33,11 +37,15 @@ This creates the project structure with `data/`, `config/`, `imports/`, and `exp
 
 ### Step 2: Add Configuration
 
+Define how your Excel file should be imported into the database.
+
 ```bash
 excel-to-sql config add --type products --table products --pk id
 ```
 
 ### Step 3: Import Your Excel File
+
+Import your data using the configuration you just created.
 
 ```bash
 excel-to-sql import --file products.xlsx --type products
@@ -46,6 +54,8 @@ excel-to-sql import --file products.xlsx --type products
 That's it! Your data is now in SQLite.
 
 ## Auto-Pilot Mode (Recommended)
+
+Skip manual configuration and let Auto-Pilot analyze your Excel files to automatically detect patterns and generate optimal configurations.
 
 For automatic configuration without manual setup:
 

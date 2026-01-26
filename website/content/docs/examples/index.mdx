@@ -7,6 +7,8 @@ sidebar:
 
 ## E-commerce Product Catalog
 
+Import product data with value mappings to transform status codes and calculated columns for inventory values.
+
 Import and manage product data:
 
 ```python
@@ -41,6 +43,8 @@ sdk.export_to_excel(
 
 ## Customer Data Migration
 
+Migrate customer data with validation rules to ensure email uniqueness and proper format.
+
 Migrate customer data with validation:
 
 ```python
@@ -69,6 +73,8 @@ if result['validation_errors']:
 ```
 
 ## Order Processing
+
+Process orders with calculated fields for subtotal, tax, and shipping costs based on order weight.
 
 Process orders with calculated fields:
 
@@ -103,6 +109,8 @@ sdk.export_to_excel(
 
 ## Quality Profiling
 
+Analyze data quality with comprehensive scoring across completeness, uniqueness, validity, and consistency dimensions.
+
 Profile and analyze data quality:
 
 ```python
@@ -131,6 +139,8 @@ sdk.generate_quality_report("products", output="quality_report.html")
 
 ## Batch Processing
 
+Process multiple Excel files in a loop with error handling for each file.
+
 Process multiple files:
 
 ```python
@@ -152,6 +162,8 @@ for filename in excel_files:
 ```
 
 ## Data Validation Pipeline
+
+Build a complete validation pipeline that combines import validation with quality profiling to ensure data integrity.
 
 Build a validation pipeline:
 
