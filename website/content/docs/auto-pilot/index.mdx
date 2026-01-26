@@ -1,195 +1,101 @@
 ---
-title: Examples
-description: Real-world usage examples
+title: Auto-Pilot Mode
+description: Zero-configuration import with intelligent pattern detection
 sidebar:
-  order: 40
+  order: 20
 ---
 
-# Examples
+# Auto-Pilot Mode
 
-Real-world examples and use cases for excel-to-sql.
+Auto-Pilot mode provides **zero-configuration import** with intelligent pattern detection, quality scoring, and automated recommendations.
 
-## E-commerce Product Catalog
+## Quick Start
 
-Import and manage product data:
-
-```python
-from excel_to_sql import ExcelToSqlite
-from excel_to_sql.transformations import CalculatedColumn
-
-sdk = ExcelToSqlite()
-
-# Import products with value mapping
-result = sdk.import_excel(
-    "products.xlsx",
-    "products",
-    value_mappings={
-        "status": {"1": "In Stock", "0": "Out of Stock"}
-    },
-    calculated_columns=[
-        CalculatedColumn("inventory_value", "quantity * unit_cost")
-    ]
-)
-
-print(f"✓ Imported {result['rows_imported']} products")
-
-# Export products report
-sdk.export_to_excel(
-    "inventory_report.xlsx",
-    {
-        "All Products": "SELECT * FROM products",
-        "Low Stock": "SELECT * FROM products WHERE quantity < 10"
-    }
-)
+```bash
+excel-to-sql magic --data ./excels --interactive
 ```
 
-## Customer Data Migration
+That's it! Auto-Pilot will:
+1. Analyze all Excel files in the directory
+2. Detect patterns (primary keys, value mappings, data types)
+3. Score data quality
+4. Generate recommendations
+5. Create configuration files
+6. Guide you through the process
 
-Migrate customer data with validation:
+## What Auto-Pilot Does
 
-```python
-from excel_to_sql import ExcelToSqlite
-from excel_to_sql.validators import ValidationRule
+### Pattern Detection
 
-sdk = ExcelToSqlite()
+Automatically identifies:
+- **Primary Keys**: Columns with unique values
+- **Foreign Keys**: Relationships between tables
+- **Value Mappings**: Code columns (0/1, Active/Inactive)
+- **Data Types**: Optimal SQL types
+- **Quality Issues**: Null values, duplicates, type mismatches
 
-# Import with validation
-result = sdk.import_excel(
-    "customers.xlsx",
-    "customers",
-    validation_rules=[
-        ValidationRule("email", "unique"),
-        ValidationRule("email", "regex", pattern=r"^[^@]+@[^@]+\.[^@]+$"),
-        ValidationRule("email", "not_null"),
-        ValidationRule("age", "range", min_value=18, max_value=120)
-    ]
-)
+### Quality Analysis
 
-# Check for validation errors
-if result['validation_errors']:
-    print(f"⚠️  {len(result['validation_errors'])} validation errors")
-    for error in result['validation_errors'][:5]:
-        print(f"  Row {error['row']}: {error['message']}")
+Multi-dimensional scoring (0-100) with letter grades (A-D):
+- **Completeness** (30%): Null value percentage
+- **Uniqueness** (25%): Duplicate detection
+- **Validity** (25%): Type and format checking
+- **Consistency** (20%): Value distribution analysis
+
+### Smart Recommendations
+
+Prioritized suggestions:
+- **HIGH**: Critical data integrity issues
+- **MEDIUM**: Quality improvements
+- **LOW**: Optimizations
+
+### Auto-Fix Capabilities
+
+Automatically corrects:
+- French codes (ENTRÉE→inbound, SORTIE→outbound)
+- Null values
+- Split field redundancy
+
+## Modes
+
+### Interactive Mode (Recommended)
+
+```bash
+excel-to-sql magic --data . --interactive
 ```
 
-## Order Processing
+Step-by-step guided configuration.
 
-Process orders with calculated fields:
+### Automatic Mode
 
-```python
-from excel_to_sql import ExcelToSqlite
-from excel_to_sql.transformations import CalculatedColumn
-
-sdk = ExcelToSqlite()
-
-# Import orders with calculations
-result = sdk.import_excel(
-    "orders.xlsx",
-    "orders",
-    calculated_columns=[
-        CalculatedColumn("subtotal", "quantity * unit_price"),
-        CalculatedColumn("tax", "subtotal * 0.1"),
-        CalculatedColumn("total", "subtotal + tax"),
-        CalculatedColumn("shipping", "CASE WHEN weight > 10 THEN 20 ELSE 5 END")
-    ]
-)
-
-# Generate order report
-sdk.export_to_excel(
-    "orders_report.xlsx",
-    {
-        "All Orders": "SELECT * FROM orders ORDER BY order_date DESC",
-        "High Value": "SELECT * FROM orders WHERE total > 1000",
-        "Recent": "SELECT * FROM orders WHERE order_date >= date('now', '-30 days')"
-    }
-)
+```bash
+excel-to-sql magic --data . --output my-config
 ```
 
-## Quality Profiling
+Generates configuration without prompts.
 
-Profile and analyze data quality:
+### Dry Run Mode
 
-```python
-from excel_to_sql import ExcelToSqlite
-
-sdk = ExcelToSqlite()
-
-# Import data
-sdk.import_excel("products.xlsx", "products")
-
-# Generate quality report
-profile = sdk.profile_table("products")
-
-# Print summary
-print(f"Quality Score: {profile['summary']['quality_score']}/100")
-print(f"Grade: {profile['summary']['grade']}")
-
-# Show issues
-print("\nIssues found:")
-for issue in profile['issues'][:10]:
-    print(f"  [{issue['severity']}] {issue['column']}: {issue['message']}")
-
-# Export HTML report
-sdk.generate_quality_report("products", output="quality_report.html")
+```bash
+excel-to-sql magic --data . --dry-run
 ```
 
-## Batch Processing
+Analyze without generating files.
 
-Process multiple files:
+## Output Files
 
-```python
-import os
-from excel_to_sql import ExcelToSqlite
+Auto-Pilot creates `.excel-to-sql/`:
 
-sdk = ExcelToSqlite()
-
-# Process all Excel files
-excel_files = [f for f in os.listdir("data/") if f.endswith(".xlsx")]
-
-for filename in excel_files:
-    table_name = filename.split(".")[0]
-    try:
-        result = sdk.import_excel(f"data/{filename}", table_name)
-        print(f"✓ {table_name}: {result['rows_imported']} rows")
-    except Exception as e:
-        print(f"✗ {table_name}: {e}")
 ```
-
-## Data Validation Pipeline
-
-Build a validation pipeline:
-
-```python
-from excel_to_sql import ExcelToSqlite
-from excel_to_sql.validators import ValidationRule
-from excel_to_sql.profiling import DataProfiler
-
-sdk = ExcelToSqlite()
-
-# Import with validation
-result = sdk.import_excel(
-    "data.xlsx",
-    "mytype",
-    validation_rules=[
-        ValidationRule("id", "unique"),
-        ValidationRule("id", "not_null"),
-        ValidationRule("email", "regex", pattern=r"^[^@]+@[^@]+\.[^@]+$")
-    ]
-)
-
-# Profile quality
-profile = sdk.profile_table("mytype")
-
-# If quality score < 80, generate report
-if profile['summary']['quality_score'] < 80:
-    print("⚠️  Low quality score detected")
-    sdk.generate_quality_report("mytype", output="quality_alert.html")
-else:
-    print("✓ Quality acceptable")
+.excel-to-sql/
+├── mappings.json          # Type configurations
+├── analysis.json          # Pattern detection results
+├── quality_report.json    # Quality scores and issues
+└── backups/              # Auto-fix backups
 ```
 
 ## See Also
 
-- [CLI Reference](/docs/cli-reference) - CLI examples
-- [Python SDK](/docs/python-sdk) - SDK documentation
-- [Auto-Pilot Mode](/docs/auto-pilot) - Automatic configuration
+- [Pattern Detection](/docs/auto-pilot/pattern-detection) - Detection algorithms
+- [Quality Scoring](/docs/auto-pilot/quality-scoring) - Quality analysis
+- [Recommendations](/docs/auto-pilot/recommendations) - Auto-fix capabilities

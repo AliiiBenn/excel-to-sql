@@ -1,0 +1,81 @@
+---
+title: Python SDK
+description: Programmatic access to excel-to-sql
+sidebar:
+  order: 30
+---
+
+# Python SDK
+
+The Python SDK provides full programmatic access to all excel-to-sql features.
+
+## Installation
+
+```bash
+pip install excel-to-sql
+```
+
+## Quick Start
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+# Initialize SDK
+sdk = ExcelToSqlite()
+
+# Import Excel file
+result = sdk.import_excel("products.xlsx", "products")
+print(f"Imported {result['rows_imported']} rows")
+
+# Query data
+df = sdk.query("SELECT * FROM products WHERE price > 100")
+print(df.head())
+
+# Export to Excel
+sdk.export_to_excel("report.xlsx", {"Products": "products"})
+
+# Profile quality
+profile = sdk.profile_table("products")
+print(f"Quality Score: {profile['summary']['quality_score']}")
+```
+
+## Core Operations
+
+### Import
+
+```python
+result = sdk.import_excel(
+    file_path="data.xlsx",
+    type_name="mytype",
+    tags=["import", "verified"]
+)
+```
+
+### Export
+
+```python
+# Export table
+sdk.export_to_excel(
+    output="report.xlsx",
+    sheet_mapping={"Products": "products"}
+)
+```
+
+### Query
+
+```python
+df = sdk.query("SELECT * FROM products WHERE category = ?", params=["Electronics"])
+```
+
+### Profile
+
+```python
+profile = sdk.profile_table("products")
+print(f"Score: {profile['summary']['quality_score']}/100")
+```
+
+## See Also
+
+- [Transformations](/docs/python-sdk/transformations) - Value mappings, calculated columns
+- [Validators](/docs/python-sdk/validators) - Validation rules
+- [Examples](/docs/examples) - Real-world examples
