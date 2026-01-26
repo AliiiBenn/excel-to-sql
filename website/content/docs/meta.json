@@ -23,6 +23,11 @@
     "python-sdk/transformations",
     "python-sdk/validators",
     "---Examples---",
-    "examples/index"
+    "examples/index",
+    "---Guides---",
+    "guides/migration",
+    "guides/troubleshooting",
+    "guides/best-practices",
+    "guides/performance"
   ]
 }

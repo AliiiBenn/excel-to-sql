@@ -1,0 +1,548 @@
+---
+title: Migration Guide
+description: Migrate Excel data to SQLite databases
+icon: ArrowRight
+sidebar:
+  order: 50
+---
+
+import { Callout, Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+# Migration Guide
+
+Complete guide to migrating your Excel data to SQLite databases with excel-to-sql.
+
+## Overview
+
+This guide walks through migrating Excel-based workflows to SQLite databases while maintaining data integrity and business continuity.
+
+<Tabs>
+  <Tab value="assessment">
+    ## Phase 1: Assessment
+
+Before migrating, assess your current Excel setup.
+
+### Inventory Your Excel Files
+
+```bash
+# List all Excel files in your directory
+find . -name "*.xlsx" -o -name "*.xls"
+```
+
+Document the following for each file:
+- File name and location
+- Number of rows
+- Key columns and data types
+- Dependencies between files
+- Current usage patterns
+
+### Identify Critical Data
+
+Classify your data by importance:
+
+**High Priority**
+- Transactional data (orders, transactions)
+- Customer master data
+- Inventory data
+
+**Medium Priority**
+- Historical records
+- Reporting data
+- Analysis datasets
+
+**Low Priority**
+- Archived data
+- Temporary files
+- Test data
+  </Tab>
+  <Tab value="preparation">
+    ## Phase 2: Data Preparation
+
+### Standardize File Formats
+
+Ensure consistent Excel file formats:
+
+<Tabs>
+  <Tab value="naming">
+    **File Naming**
+    - Use lowercase with underscores: `sales_data_2024.xlsx`
+    - Avoid spaces and special characters
+    - Include date stamps for versioning
+  </Tab>
+  <Tab value="structure">
+    **Sheet Structure**
+    - Use consistent sheet names across files
+    - One table per sheet when possible
+    - Avoid merged cells
+    - Use header rows in row 1
+  </Tab>
+  <Tab value="types">
+    **Data Types**
+    - Convert text-formatted numbers to numeric
+    - Standardize date formats (ISO 8601: YYYY-MM-DD)
+    - Remove trailing spaces from text fields
+    - Ensure consistent boolean values
+  </Tab>
+</Tabs>
+
+### Handle Multi-File Workflows
+
+For related Excel files, establish import order:
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Import dependent tables in correct order
+files_to_import = [
+    ("customers.xlsx", "customers"),
+    ("products.xlsx", "products"),
+    ("orders.xlsx", "orders"),
+    ("order_items.xlsx", "order_items")
+]
+
+for file_path, type_name in files_to_import:
+    sdk.import_excel(file_path, type_name)
+    print(f"✓ Imported {file_path}")
+```
+  </Tab>
+  <Tab value="mapping">
+    ## Phase 3: Create Mappings
+
+### Auto-Pilot Approach
+
+Recommended for quick migrations:
+
+```bash
+# Auto-generate configurations
+excel-to-sql magic --data ./excels --interactive
+```
+
+Review and adjust generated mappings before importing.
+
+### Manual Approach
+
+For complex migrations, create configurations manually:
+
+```json
+{
+  "orders": {
+    "target_table": "orders",
+    "primary_key": ["order_id"],
+    "column_mappings": {
+      "Order ID": {"target": "order_id", "type": "integer"},
+      "Customer ID": {"target": "customer_id", "type": "integer"},
+      "Order Date": {"target": "order_date", "type": "date"},
+      "Status": {"target": "status", "type": "string"}
+    },
+    "value_mappings": [
+      {
+        "column": "status",
+        "mappings": {
+          "P": "Pending",
+          "S": "Shipped",
+          "D": "Delivered",
+          "C": "Cancelled"
+        }
+      }
+    ]
+  }
+}
+```
+
+### Foreign Key Setup
+
+Establish relationships between tables:
+
+```python
+# Define foreign keys manually in schema
+# Auto-Pilot detects these automatically, but you can verify:
+
+# Check detected foreign keys
+sqlite3 data/database.db "
+  SELECT
+    'orders' as table_name,
+    'customer_id' as column_name,
+    'customers.id' as references_table,
+    'customers.id' as references_column
+  FROM pragma_foreign_key_list('orders')
+"
+```
+  </Tab>
+  <Tab value="validation">
+    ## Phase 4: Validation
+
+### Data Quality Checks
+
+Before finalizing migration, validate data quality:
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Import with validation
+result = sdk.import_excel(
+    "customers.xlsx",
+    "customers",
+    validation_rules=[
+        ValidationRule("email", "unique"),
+        ValidationRule("email", "not_null"),
+        ValidationRule("email", "regex", pattern=r"^[^@]+@[^@]+\.[^@]+$"),
+        ValidationRule("age", "range", min_value=0, max_value=120)
+    ]
+)
+
+# Check for errors
+if result['validation_errors']:
+    print(f"⚠️  {len(result['validation_errors'])} validation errors")
+    for error in result['validation_errors'][:10]:
+        print(f"  Row {error['row']}: {error['message']}")
+```
+
+### Profile Quality
+
+Generate quality reports for each table:
+
+```python
+for table in ["customers", "products", "orders"]:
+    profile = sdk.profile_table(table)
+    print(f"\n{table}:")
+    print(f"  Quality Score: {profile['summary']['quality_score']}/100")
+    print(f"  Grade: {profile['summary']['grade']}")
+```
+  </Tab>
+  <Tab value="execution">
+    ## Phase 5: Execute Migration
+
+### Backup Strategy
+
+Always create backups before migrating:
+
+<Tabs>
+  <Tab value="automatic">
+    **Auto-Pilot Backups**
+
+Auto-Pilot creates automatic backups:
+
+```bash
+.excel-to-sql/backups/file_YYYYMMDD_HHMMSS.xlsx.bak
+```
+  </Tab>
+  <Tab value="manual">
+    **Manual Backups**
+
+```bash
+# Backup original Excel files
+cp -r data/ backups/excel_originals_$(date +%Y%m%d)/
+
+# Backup database
+cp data/database.db backups/database_$(date +%Y%m%d).db
+```
+  </Tab>
+</Tabs>
+
+### Test Migration
+
+Migrate a subset first:
+
+```bash
+# Test with 10% of data
+head -n 100 products.xlsx > products_test.xlsx
+excel-to-sql import --file products_test.xlsx --type products
+
+# Verify results
+sqlite3 data/database.db "SELECT COUNT(*) FROM products;"
+```
+
+### Full Migration
+
+Execute in batches for large datasets:
+
+```python
+from excel_to_sql import ExcelToSqlite
+import pandas as pd
+
+sdk = ExcelToSqlite()
+
+# For large files, import in chunks
+chunk_size = 10000
+df = pd.read_excel("large_file.xlsx")
+
+for start in range(0, len(df), chunk_size):
+    chunk = df[start:start + chunk_size]
+    chunk.to_excel("temp_chunk.xlsx", index=False)
+
+    result = sdk.import_excel("temp_chunk.xlsx", "mytype")
+    print(f"✓ Imported rows {start+1} to {start+len(chunk)}")
+```
+
+### Monitor Progress
+
+Track migration progress:
+
+```bash
+# View import statistics
+excel-to-sql status
+
+# Monitor database size
+du -h data/database.db
+
+# Check table counts
+sqlite3 data/database.db "
+  SELECT name, (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=m.name) as rows
+  FROM sqlite_master m WHERE type='table'
+  ORDER BY name;
+"
+```
+  </Tab>
+  <Tab value="verification">
+    ## Phase 6: Verification
+
+### Data Integrity Checks
+
+Verify migrated data matches source:
+
+<Tabs>
+  <Tab value="counts">
+    **Row Counts**
+
+```python
+import pandas as pd
+
+# Count in Excel
+excel_count = len(pd.read_excel("products.xlsx"))
+
+# Count in SQLite
+sdk = ExcelToSqlite()
+sql_count = sdk.query("SELECT COUNT(*) as count FROM products").iloc[0]['count']
+
+print(f"Excel: {excel_count}, SQLite: {sql_count}")
+assert excel_count == sql_count, "Row count mismatch!"
+```
+  </Tab>
+  <Tab value="sampling">
+    **Data Sampling**
+
+```python
+# Sample random rows for comparison
+excel_sample = pd.read_excel("products.xlsx").sample(n=100)
+sql_sample = sdk.query("SELECT * FROM products ORDER BY RANDOM() LIMIT 100")
+
+# Compare key columns
+for col in ["id", "name", "price"]:
+    excel_values = set(excel_sample[col].astype(str))
+    sql_values = set(sql_sample[col].astype(str))
+
+    missing = excel_values - sql_values
+    extra = sql_values - excel_values
+
+    if missing or extra:
+        print(f"{col}: Missing {len(missing)}, Extra {len(extra)}")
+```
+  </Tab>
+  <Tab value="aggregates">
+    **Aggregate Checks**
+
+```python
+# Compare aggregations
+excel_sum = pd.read_excel("orders.xlsx")["total"].sum()
+sql_sum = sdk.query("SELECT SUM(total) as sum FROM orders").iloc[0]['sum']
+
+print(f"Excel total: {excel_sum:.2f}")
+print(f"SQLite total: {sql_sum:.2f}")
+```
+  </Tab>
+</Tabs>
+
+### Business Logic Validation
+
+Test business rules:
+
+```python
+# Validate business rules
+sdk.query("""
+  SELECT
+    COUNT(*) as invalid_orders
+  FROM orders
+  WHERE total < 0 OR quantity < 0
+""")
+```
+  </Tab>
+  <Tab value="cutover">
+    ## Phase 7: Cutover
+
+### Gradual Cutover
+
+<Tabs>
+  <Tab value="parallel">
+    **Parallel Operation**
+
+Keep both systems running during transition:
+
+```python
+# Continue Excel operations while using SQLite for new features
+# Read from Excel, write to SQLite
+```
+
+Users access data through new interface while Excel files remain accessible.
+  </Tab>
+  <Tab value="redirect">
+    **Read-Only Access**
+
+Set Excel files to read-only:
+
+```bash
+chmod 444 data/*.xlsx
+```
+
+Update all references to use SQLite as data source.
+  </Tab>
+  <Tab value="deprecate">
+    **Deprecation Notice**
+
+Communicate timeline:
+
+- **Week 1-2**: Parallel operation with SQLite for new features
+- **Week 3-4**: Migrate all read operations to SQLite
+- **Week 5-6**: Make Excel files read-only
+- **Week 7-8**: Archive Excel files
+  </Tab>
+</Tabs>
+
+### Training
+
+Train team on new workflows:
+
+<Tabs>
+  <Tab value="end-users">
+    **End Users**
+
+Focus on:
+- Querying with SQL basics
+- Export functionality
+- New report generation
+  </Tab>
+  <Tab value="analysts">
+    **Data Analysts**
+
+Focus on:
+- Advanced SQL queries
+- Python SDK usage
+- Data quality profiling
+  </Tab>
+  <Tab value="admins">
+    **Administrators**
+
+Focus on:
+- System maintenance
+- Backup procedures
+- Performance monitoring
+  </Tab>
+</Tabs>
+  </Tab>
+</Tabs>
+
+## Common Migration Scenarios
+
+### E-commerce Platform
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Products with inventory value calculation
+sdk.import_excel(
+    "products.xlsx",
+    "products",
+    calculated_columns=[
+        CalculatedColumn("inventory_value", "quantity * unit_cost")
+    ],
+    value_mappings={
+        "stock_status": {
+            "1": "In Stock",
+            "0": "Out of Stock",
+            "2": "Low Stock"
+        }
+    }
+)
+```
+
+### CRM Migration
+
+```python
+# Migrate customer data with validation
+sdk.import_excel(
+    "customers.xlsx",
+    "customers",
+    validation_rules=[
+        ValidationRule("email", "unique"),
+        ValidationRule("email", "not_null"),
+        ValidationRule("email", "regex", pattern=r"^[^@]+@[^@]+\.[^@]+$"),
+        ValidationRule("phone", "regex", pattern=r"^\+?\d{10,15}$")
+    ]
+)
+```
+
+### Financial Data
+
+```python
+# Financial data with precision requirements
+sdk.import_excel(
+    "transactions.xlsx",
+    "transactions",
+    column_mappings={
+        "Transaction Date": {"target": "transaction_date", "type": "date"},
+        "Amount": {"target": "amount", "type": "float"}
+    }
+)
+```
+
+## Rollback Plan
+
+Always have a rollback plan:
+
+```bash
+# If migration fails, restore from backup
+
+# 1. Stop new processes using SQLite
+# 2. Restore Excel files from backup
+# 3. Restore database from backup
+cp backups/excel_originals_YYYYMMDD/* data/
+cp backups/database_YYYYMMDD.db data/database.db
+# 4. Resume Excel operations
+```
+
+## Migration Checklist
+
+### Pre-Migration
+- [ ] Inventory all Excel files
+- [ ] Document data dependencies
+- [ ] Identify critical data
+- [ ] Create backup strategy
+- [ ] Plan import order
+- [ ] Schedule migration window
+
+### Migration
+- [ ] Run Auto-Pilot analysis
+- [ ] Create mappings
+- [ ] Set up validations
+- [ ] Test with sample data
+- [ ] Execute full migration
+- [ ] Verify data integrity
+
+### Post-Migration
+- [ ] Validate all data
+- [ ] Update applications
+- [ ] Train users
+- [ ] Monitor performance
+- [ ] Archive Excel files
+- [ ] Document new workflows
+
+## See Also
+
+- [Best Practices](/docs/guides/best-practices) - Recommended patterns
+- [Performance Guide](/docs/guides/performance) - Optimization tips
+- [Troubleshooting](/docs/guides/troubleshooting) - Common issues

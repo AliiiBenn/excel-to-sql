@@ -1,0 +1,575 @@
+---
+title: Performance Guide
+description: Optimize excel-to-sql for speed and efficiency
+icon: Zap
+sidebar:
+  order: 53
+---
+
+import { Callout, Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+# Performance Guide
+
+Optimize your excel-to-sql workflows for maximum speed and efficiency when working with large datasets.
+
+## Import Performance
+
+### Batch Size Optimization
+
+Finding the right batch size can significantly improve import speed for large files.
+
+<Tabs>
+  <Tab value="small">
+    **Small Files (<10K rows)**
+
+    Import entire file at once for optimal speed.
+
+    ```python
+    from excel_to_sql import ExcelToSqlite
+
+    sdk = ExcelToSqlite()
+
+    # Single import is fastest for small files
+    result = sdk.import_excel("small_file.xlsx", "mytype")
+    print(f"✓ Imported {result['rows_imported']} rows")
+    ```
+  </Tab>
+  <Tab value="medium">
+    **Medium Files (10K-100K rows)**
+
+    Use chunked imports to balance memory and speed.
+
+    ```python
+    import pandas as pd
+    from excel_to_sql import ExcelToSqlite
+
+    sdk = ExcelToSqlite()
+
+    # Optimal chunk size: 10K-20K rows
+    CHUNK_SIZE = 15000
+    df = pd.read_excel("medium_file.xlsx")
+
+    for i in range(0, len(df), CHUNK_SIZE):
+        chunk = df[i:i + CHUNK_SIZE]
+        chunk.to_excel(f"temp_{i}.xlsx", index=False)
+        result = sdk.import_excel(f"temp_{i}.xlsx", "mytype")
+
+        progress = ((i + CHUNK_SIZE) / len(df)) * 100
+        print(f"Progress: {min(progress, 100):.1f}%")
+    ```
+  </Tab>
+  <Tab value="large">
+    **Large Files (>100K rows)**
+
+    Use streaming with smaller chunks for memory efficiency.
+
+    ```python
+    import pandas as pd
+    from excel_to_sql import ExcelToSqlite
+
+    sdk = ExcelToSqlite()
+
+    # Smaller chunks for memory efficiency
+    CHUNK_SIZE = 5000
+    df = pd.read_excel("large_file.xlsx")
+
+    total_rows = len(df)
+    for i in range(0, total_rows, CHUNK_SIZE):
+        chunk = df[i:i + CHUNK_SIZE]
+        chunk.to_excel(f"temp_{i}.xlsx", index=False)
+        result = sdk.import_excel(f"temp_{i}.xlsx", "mytype")
+
+        print(f"✓ Rows {i+1}-{min(i+CHUNK_SIZE, total_rows)}")
+    ```
+  </Tab>
+</Tabs>
+
+### Skip Hash Checking
+
+Skip content hash checking when you know data has changed for faster imports.
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Use force=True to skip hash computation (faster but less safe)
+result = sdk.import_excel(
+    "daily_dump.xlsx",
+    "products",
+    force=True  # Skip hash check, always import
+)
+```
+
+<Callout type="warning">
+  **Warning**: Only use `force=True` when you're certain the data has changed. This bypasses duplicate detection.
+</Callout>
+
+### Disable Backups
+
+Disable automatic backups during imports for production environments.
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Disable backups for faster imports
+result = sdk.import_excel(
+    "production.xlsx",
+    "products",
+    create_backup=False  # No backup = faster
+)
+```
+
+<Callout type="error">
+  **Critical**: Only disable backups if you have separate backup procedures in place.
+</Callout>
+
+## Query Performance
+
+### Index Strategy
+
+Create indexes on columns frequently used in WHERE, JOIN, and ORDER BY clauses.
+
+```python
+import sqlite3
+
+conn = sqlite3.connect("data/database.db")
+cursor = conn.cursor()
+
+# Index columns used in WHERE clauses
+cursor.execute("""
+    CREATE INDEX IF NOT EXISTS idx_products_category
+    ON products(category);
+""")
+
+# Index columns used in JOINs
+cursor.execute("""
+    CREATE INDEX IF NOT EXISTS idx_orders_customer_id
+    ON orders(customer_id);
+""")
+
+# Index columns used in ORDER BY
+cursor.execute("""
+    CREATE INDEX IF NOT EXISTS idx_orders_date
+    ON orders(order_date DESC);
+""")
+
+conn.commit()
+conn.close()
+print("✓ Indexes created")
+```
+
+### Covering Indexes
+
+Create covering indexes that include all columns needed for common queries.
+
+```python
+# Instead of: SELECT category, COUNT(*) FROM products GROUP BY category
+# Use a covering index:
+
+cursor.execute("""
+    CREATE INDEX idx_products_category_covering
+    ON products(category, name, price);
+""")
+
+# Query can be satisfied entirely from index
+```
+
+### Query Optimization
+
+Write efficient queries that leverage indexes and minimize data transfer.
+
+<Tabs>
+  <Tab value="select-specific">
+    **Select Specific Columns**
+
+    ```python
+    # ❌ Bad: Fetches all columns
+    result = sdk.query("SELECT * FROM orders WHERE status = 'pending'")
+
+    # ✅ Good: Fetches only needed columns
+    result = sdk.query("""
+        SELECT order_id, customer_id, total
+        FROM orders
+        WHERE status = 'pending'
+    """)
+    ```
+  </Tab>
+  <Tab value="limit-results">
+    **Limit Results**
+
+    ```python
+    # ❌ Bad: Fetches all orders
+    result = sdk.query("SELECT * FROM orders")
+    recent = result[:10]  # Then filters in Python
+
+    # ✅ Good: Limits at database
+    result = sdk.query("SELECT * FROM orders ORDER BY order_date DESC LIMIT 10")
+    ```
+  </Tab>
+  <Tab value="avoid-functions">
+    **Avoid Functions on Columns**
+
+    ```python
+    # ❌ Bad: Function on column prevents index usage
+    result = sdk.query("""
+        SELECT * FROM orders
+        WHERE UPPER(status) = 'PENDING'
+    """)
+
+    # ✅ Good: Direct column comparison
+    result = sdk.query("""
+        SELECT * FROM orders
+        WHERE status = 'pending'
+    """)
+    ```
+  </Tab>
+  <Tab value="use-joins">
+    **Use JOINs Efficiently**
+
+    ```python
+    # ❌ Bad: Multiple queries
+    orders = sdk.query("SELECT * FROM orders")
+    for order in orders:
+        customer = sdk.query(f"SELECT * FROM customers WHERE id = {order['customer_id']}")
+
+    # ✅ Good: Single JOIN query
+    result = sdk.query("""
+        SELECT
+            o.*,
+            c.name as customer_name,
+            c.email as customer_email
+        FROM orders o
+        JOIN customers c ON o.customer_id = c.id
+    """)
+    ```
+  </Tab>
+</Tabs>
+
+## Database Maintenance
+
+### Regular VACUUM
+
+Rebuild the database file to reclaim space and reduce fragmentation.
+
+```bash
+# Run VACUUM after large deletions or updates
+sqlite3 data/database.db "VACUUM;"
+```
+
+<Callout type="info">
+  **Tip**: Schedule VACUUM during maintenance windows as it requires exclusive database access.
+</Callout>
+
+### Update Statistics
+
+Keep statistics up-to-date for optimal query planning.
+
+```bash
+# Update statistics after bulk imports
+sqlite3 data/database.db "ANALYZE;"
+
+# Or after schema changes
+sqlite3 data/database.db "PRAGMA optimize;"
+```
+
+### WAL Mode
+
+Enable Write-Ahead Logging for better concurrent access and crash recovery.
+
+```python
+import sqlite3
+
+conn = sqlite3.connect("data/database.db")
+cursor = conn.cursor()
+
+# Enable WAL mode
+cursor.execute("PRAGMA journal_mode=WAL;")
+cursor.execute("PRAGMA synchronous=NORMAL;")
+
+conn.commit()
+conn.close()
+
+print("✓ WAL mode enabled")
+```
+
+Benefits:
+- Better read concurrency
+- Faster writes
+- Better crash recovery
+
+## Memory Optimization
+
+### Streaming Large Files
+
+Process large Excel files in chunks to reduce memory usage.
+
+```python
+import pandas as pd
+
+# Read in chunks instead of all at once
+chunk_size = 10000
+chunks = pd.read_excel("huge_file.xlsx", chunksize=chunk_size)
+
+for i, chunk in enumerate(chunks):
+    chunk.to_excel(f"temp_chunk_{i}.xlsx", index=False)
+    # Process chunk
+    sdk.import_excel(f"temp_chunk_{i}.xlsx", "mytype")
+    print(f"✓ Processed chunk {i+1}")
+```
+
+### Close Connections
+
+Always close database connections when done to free resources.
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+# ❌ Bad: Connection stays open
+sdk = ExcelToSqlite()
+sdk.query("SELECT * FROM products")
+# Connection remains open
+
+# ✅ Good: Explicitly close or use context manager
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+try:
+    result = sdk.query("SELECT * FROM products")
+finally:
+    # Close connection (if SDK supports it)
+    pass
+```
+
+## Export Performance
+
+### Optimize Export Queries
+
+Write efficient queries before exporting to minimize processing time.
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Optimize query before export
+sdk.export_to_excel(
+    output="report.xlsx",
+    sheet_mapping={
+        "Recent Orders": """
+            SELECT
+                order_id,
+                customer_name,
+                total,
+                order_date
+            FROM orders_summary
+            WHERE order_date >= date('now', '-30 days')
+            ORDER BY order_date DESC
+        """
+    }
+)
+```
+
+### Export Specific Columns
+
+Export only the columns you need to reduce file size and processing time.
+
+```python
+# Instead of exporting entire table
+sdk.export_to_excel(
+    output="report.xlsx",
+    sheet_mapping={"Products": "products"}  # All columns
+)
+
+# Export only needed columns
+sdk.export_to_excel(
+    output="report.xlsx",
+    sheet_mapping={
+        "Products": "SELECT id, name, price FROM products"
+    }
+)
+```
+
+## Monitoring
+
+### Track Import Performance
+
+Monitor import times to identify performance bottlenecks.
+
+```python
+import time
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+files = [
+    ("products.xlsx", "products"),
+    ("orders.xlsx", "orders"),
+    ("customers.xlsx", "customers")
+]
+
+for file_path, type_name in files:
+    start = time.time()
+    result = sdk.import_excel(file_path, type_name)
+    duration = time.time() - start
+
+    rows_per_sec = result['rows_imported'] / duration
+    print(f"{file_path}: {duration:.2f}s ({rows_per_sec:.0f} rows/sec)")
+```
+
+### Profile Queries
+
+Identify slow queries using SQLite's EXPLAIN QUERY PLAN.
+
+```bash
+# Analyze query execution plan
+sqlite3 data/database.db "EXPLAIN QUERY PLAN
+SELECT * FROM orders WHERE customer_id = 123
+"
+
+# Look for:
+# - SCAN TABLE (slow, full table scan)
+# - SEARCH TABLE USING INDEX (fast, index seek)
+```
+
+### Monitor Database Size
+
+Track database growth to identify potential issues early.
+
+```python
+import os
+
+db_path = "data/database.db"
+size = os.path.getsize(db_path)
+size_mb = size / (1024 * 1024)
+
+print(f"Database size: {size_mb:.2f} MB")
+
+# Alert if growing too fast
+if size_mb > 1000:
+    print("⚠️  Database size exceeds 1GB")
+    print("Consider:")
+    print("  - Archiving old data")
+    print("  - Running VACUUM")
+    print("  - Reviewing indexes")
+```
+
+## Performance Benchmarks
+
+### Expected Import Performance
+
+Use these benchmarks as reference for your imports.
+
+| Rows | Columns | Expected Time | Rows/Sec |
+|------|---------|---------------|----------|
+| 1,000 | 10 | 1-2s | 500-1000 |
+| 10,000 | 10 | 5-10s | 1000-2000 |
+| 50,000 | 10 | 30-60s | 800-1500 |
+| 100,000 | 10 | 60-120s | 800-1500 |
+| 500,000 | 10 | 5-10min | 800-1500 |
+
+<Callout type="info">
+  **Note**: Performance varies based on hardware, data complexity, transformations, and validations.
+</Callout>
+
+### Optimization Checklist
+
+Review this checklist when optimizing performance.
+
+<Callout type="check">
+  **Import Optimization**
+  - [ ] Use appropriate batch sizes
+  - [ ] Skip hash checking when safe
+  - [ ] Disable unnecessary backups
+  - [ ] Remove unused validations
+  - [ ] Stream large files
+</Callout>
+
+<Callout type="check">
+  **Query Optimization**
+  - [ ] Create indexes on filter columns
+  - [ ] Select only needed columns
+  - [ ] Use JOINs instead of multiple queries
+  - [ ] Limit result sets
+  - [ ] Avoid functions on indexed columns
+</Callout>
+
+<Callout type="check">
+  **Database Maintenance**
+  - [ ] Run VACUUM regularly
+  - [ ] Update statistics after bulk changes
+  - [ ] Enable WAL mode
+  - [ ] Monitor database size
+  - [ ] Archive old data
+</Callout>
+
+## Common Performance Issues
+
+### Issue: Slow Imports
+
+**Symptoms**: Imports take much longer than expected.
+
+**Diagnosis**:
+```bash
+# Check import duration
+time excel-to-sql import --file large.xlsx --type mytype
+```
+
+**Solutions**:
+1. Reduce batch size
+2. Skip unnecessary validations
+3. Disable hash checking with `--force`
+4. Use faster storage (SSD vs HDD)
+5. Close other applications using memory
+
+### Issue: Slow Queries
+
+**Symptoms**: Queries take seconds or minutes.
+
+**Diagnosis**:
+```bash
+# Check query plan
+sqlite3 data/database.db "EXPLAIN QUERY PLAN SELECT * FROM orders WHERE status = 'pending'"
+```
+
+**Solutions**:
+1. Create missing indexes
+2. Rewrite query to use indexes
+3. Select fewer columns
+4. Use LIMIT to reduce results
+5. Run ANALYZE to update statistics
+
+### Issue: Large Database Size
+
+**Symptoms**: Database file grows excessively large.
+
+**Diagnosis**:
+```bash
+# Check database size
+ls -lh data/database.db
+
+# Check table sizes
+sqlite3 data/database.db "
+SELECT
+  name,
+  (pgsize * 1000) as size_kb
+FROM sqlite_master
+JOIN dbstat ON name = name
+GROUP BY name
+ORDER BY size_kb DESC;
+"
+```
+
+**Solutions**:
+1. Run VACUUM to reclaim space
+2. Archive old data to separate database
+3. Remove unnecessary indexes
+4. Use appropriate data types (INTEGER instead of TEXT for IDs)
+
+## See Also
+
+- [Best Practices](/docs/guides/best-practices) - Recommended patterns
+- [Migration Guide](/docs/guides/migration) - Migration workflow
+- [Troubleshooting](/docs/guides/troubleshooting) - Common issues

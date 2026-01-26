@@ -1,0 +1,454 @@
+---
+title: Troubleshooting
+description: Solve common issues and errors
+icon: AlertCircle
+sidebar:
+  order: 51
+---
+
+import { Callout, Steps, Step } from 'fumadocs-ui/components/steps';
+
+# Troubleshooting
+
+Solutions to common issues and errors when working with excel-to-sql.
+
+## Installation Issues
+
+### Python Version Errors
+
+**Problem**: ModuleNotFoundError or syntax errors
+
+<Callout type="error">
+  **Issue**: excel-to-sql requires Python 3.10 or higher
+</Callout>
+
+**Solution**:
+```bash
+# Check Python version
+python --version  # Should be 3.10+
+
+# If using python3
+python3 --version
+
+# Install with correct Python
+python3 -m pip install excel-to-sql
+```
+
+### Permission Errors
+
+**Problem**: Permission denied when installing
+
+<Callout type="error">
+  **Issue**: Insufficient permissions to install packages
+</Callout>
+
+**Solutions**:
+
+```bash
+# Option 1: Install to user directory
+pip install --user excel-to-sql
+
+# Option 2: Use virtual environment
+python -m venv .venv
+source .venv/bin/activate
+pip install excel-to-sql
+```
+
+## Import Errors
+
+### File Not Found
+
+**Problem**: `FileNotFoundError` or "File not found"
+
+<Callout type="error">
+  **Issue**: Excel file path is incorrect
+</Callout>
+
+**Solutions**:
+
+```bash
+# Use absolute paths
+excel-to-sql import --file /full/path/to/file.xlsx --type mytype
+
+# Or navigate to directory first
+cd /path/to/directory
+excel-to-sql import --file file.xlsx --type mytype
+
+# Check file exists
+ls -la file.xlsx
+```
+
+### Type Configuration Not Found
+
+**Problem**: "Type configuration not found"
+
+<Callout type="error">
+  **Issue**: Type must be configured before importing
+</Callout>
+
+**Solutions**:
+
+```bash
+# Create the type configuration first
+excel-to-sql config add --type products --table products --pk id
+
+# Then import
+excel-to-sql import --file products.xlsx --type products
+```
+
+### Primary Key Column Not Found
+
+**Problem**: "Primary key column not found"
+
+<Callout type="error">
+  **Issue**: Primary key column doesn't exist in Excel file
+</Callout>
+
+**Solutions**:
+
+```bash
+# List available columns in Excel
+python -c "import pandas as pd; print(pd.read_excel('products.xlsx').columns.tolist())"
+
+# Use correct column name
+excel-to-sql config add --type products --table products --pk Order_ID
+```
+
+## Data Import Issues
+
+### Incorrect Data Types
+
+**Problem**: Numbers imported as text, dates as text
+
+<Callout type="warning">
+  **Issue**: Excel has mixed data types in column
+</Callout>
+
+**Solution**:
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+# Explicit type mapping
+sdk = ExcelToSqlite()
+
+result = sdk.import_excel(
+    "products.xlsx",
+    "products",
+    column_mappings={
+        "Price": {"target": "price", "type": "float"},
+        "Quantity": {"target": "quantity", "type": "integer"},
+        "Created": {"target": "created_at", "type": "date"}
+    }
+)
+```
+
+### Duplicate Primary Keys
+
+**Problem**: Import fails with duplicate primary key errors
+
+<Callout type="error">
+  **Issue**: Duplicate values in primary key column
+</Callout>
+
+**Solutions**:
+
+```python
+from excel_to_sql import ExcelToSqlite
+import pandas as pd
+
+sdk = ExcelToSqlite()
+
+# Option 1: Remove duplicates before import
+df = pd.read_excel("products.xlsx")
+df = df.drop_duplicates(subset=["id"])
+df.to_excel("products_clean.xlsx", index=False)
+
+sdk.import_excel("products_clean.xlsx", "products")
+
+# Option 2: Use composite key
+sdk.import_excel(
+    "products.xlsx",
+    "products",
+    column_mappings={
+      "ID": {"target": "id", "type": "integer"},
+      "Version": {"target": "version", "type": "integer"}
+    }
+)
+```
+
+### Import Takes Too Long
+
+**Problem**: Large file import is very slow
+
+<Callout type="warning">
+  **Issue**: Large files (100K+ rows) can take several minutes
+</Callout>
+
+**Solutions**:
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Option 1: Use --force flag to skip hash check
+# (only if you're sure data hasn't changed)
+sdk.import_excel(
+    "large_file.xlsx",
+    "mytype",
+    force=True
+)
+
+# Option 2: Split large files
+import pandas as pd
+
+df = pd.read_excel("large_file.xlsx")
+chunk_size = 50000
+
+for i in range(0, len(df), chunk_size):
+    chunk = df[i:i+chunk_size]
+    chunk.to_excel(f"temp_chunk_{i}.xlsx", index=False)
+    sdk.import_excel(f"temp_chunk_{i}.xlsx", "mytype")
+```
+
+## Validation Errors
+
+### Regex Pattern Errors
+
+**Problem**: Validation fails with regex errors
+
+<Callout type="error">
+  **Issue**: Invalid regex pattern or escape characters
+</Callout>
+
+**Solution**:
+
+```python
+from excel_to_sql import ExcelToSqlite
+from excel_to_sql.validators import ValidationRule
+
+sdk = ExcelToSqlite()
+
+# Use raw strings for regex patterns
+sdk.import_excel(
+    "users.xlsx",
+    "users",
+    validation_rules=[
+        # Correct: use raw strings
+        ValidationRule("email", "regex", pattern=r"^[^@]+@[^@]+\.[^@]+$"),
+        # Correct: escape backslashes
+        ValidationRule("path", "regex", pattern=r"^/home/[^/]+/"),
+        # Avoid complex patterns in Python SDK, use in config files
+    ]
+)
+```
+
+### Null Values in Required Fields
+
+**Problem**: "not_null validation failed"
+
+<Callout type="warning">
+  **Issue**: Null values in columns marked as required
+</Callout>
+
+**Solutions**:
+
+```python
+sdk.import_excel(
+    "data.xlsx",
+    "mytype",
+    value_mappings={
+        # Replace null with default value
+        "status": {
+            None: "Unknown",  # Default for null
+            "1": "Active",
+            "0": "Inactive"
+        }
+    }
+)
+```
+
+## Database Issues
+
+### Database Locked
+
+**Problem**: "database is locked" error
+
+<Callout type="error">
+  **Issue**: Another process is accessing the database
+</Callout>
+
+**Solutions**:
+
+```bash
+# Find and stop other processes
+lsof | grep database.db
+kill <pid>
+
+# Or close all connections
+sqlite3 data/database.db "PRAGMA optimize;"
+```
+
+### Database Corruption
+
+**Problem**: "database disk image is malformed"
+
+<allout type="error">
+  **Critical**: Database file is corrupted
+</Callout>
+
+**Solution**:
+
+```bash
+# Restore from backup
+cp backups/database_YYYYMMDD.db data/database.db
+
+# Or use SQLite recovery tool
+sqlite3 data/database.db ".dump" | sqlite3 restored.db
+```
+
+## Performance Issues
+
+### Slow Queries
+
+**Problem**: Queries take too long to execute
+
+<Callout type="warning">
+  **Issue**: Missing indexes on frequently queried columns
+</Callout>
+
+**Solution**:
+
+```bash
+# Add indexes to commonly queried columns
+sqlite3 data/database.db "
+  CREATE INDEX IF NOT EXISTS idx_products_category
+  ON products(category);
+
+  CREATE INDEX IF NOT EXISTS idx_orders_date
+  ON orders(order_date DESC);
+"
+
+# Rebuild database
+sqlite3 data/database.db "VACUUM;"
+```
+
+### Large Database Size
+
+**Problem**: Database file is too large
+
+<Callout type="info">
+  **Tip**: Consider archiving old data
+</Callout>
+
+**Solutions**:
+
+```bash
+# Archive old data
+sqlite3 data/database.db "
+  ATTACH DATABASE 'archive.db' AS archive;
+
+  CREATE TABLE archive.orders_2023 AS
+    SELECT * FROM orders
+    WHERE order_date < '2024-01-01';
+
+  DELETE FROM orders
+  WHERE order_date < '2024-01-01';
+
+  DETACH DATABASE archive;
+"
+```
+
+## Export Issues
+
+### Export Fails
+
+**Problem**: Export command fails or produces empty files
+
+<Callout type="error">
+  **Issue**: Invalid SQL query or table doesn't exist
+</Callout>
+
+**Solutions**:
+
+```bash
+# Check table exists
+sqlite3 data/database.db ".tables"
+
+# Test query first
+sqlite3 data/database.db "SELECT * FROM products LIMIT 5;"
+
+# Export table (not query)
+excel-to-sql export --table products --output report.xlsx
+```
+
+### Multi-Sheet Export Issues
+
+**Problem**: Need multiple sheets in one file
+
+<Callout type="info">
+  **CLI**: Single sheet only → Use Python SDK
+</Callout>
+
+**Solution**:
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+sdk.export_to_excel(
+    output="report.xlsx",
+    sheet_mapping={
+        "Products": "products",
+        "Orders": "orders",
+        "Customers": "customers",
+        "Summary": "SELECT * FROM summary"
+    }
+)
+```
+
+## Get Help
+
+### Check Logs
+
+```bash
+# View import history
+excel-to-sql status
+
+# Enable verbose mode
+excel-to-sql import --file file.xlsx --type mytype -v
+```
+
+### Debug Mode
+
+```python
+import excel_to_sql
+excel_to_sql.__version__  # Check version
+excel_to_sql.__file__  # Check installation location
+```
+
+### Report Issues
+
+Gather information before reporting:
+
+```bash
+# Version info
+excel-to-sql version
+python --version
+
+# Sample data
+excel-to-sql import --file sample.xlsx --type test --verbose
+
+# Database check
+sqlite3 data/database.db ".schema"
+```
+
+Report at: https://github.com/wareflowx/excel-to-sql/issues
+
+Include:
+- Excel file (sample with same issue)
+- Command used
+- Full error message
+- Python and OS version

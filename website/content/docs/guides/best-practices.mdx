@@ -1,0 +1,628 @@
+---
+title: Best Practices
+description: Recommended patterns and practices
+icon: Lightbulb
+sidebar:
+  order: 52
+---
+
+import { Callout, Tabs, Tab } from 'fumadocs-ui/components/tabs';
+
+# Best Practices
+
+Recommended patterns and practices for working with excel-to-sql effectively in production environments.
+
+## Project Organization
+
+### Directory Structure
+
+Maintain a clear directory structure to keep your project organized and maintainable.
+
+```
+my-project/
+├── data/
+│   ├── database.db          # SQLite database
+│   └── backups/             # Database backups
+├── excels/
+│   ├── products.xlsx
+│   └── orders.xlsx
+├── config/
+│   └── mappings.json        # Type configurations
+├── scripts/
+│   └── import.py            # Import scripts
+└── outputs/
+    └── reports/             # Exported reports
+```
+
+### Configuration Management
+
+Centralize your type configurations in version-controlled files for reproducibility.
+
+<Tabs>
+  <Tab value="json">
+    **JSON Configuration**
+
+    Store configurations in `config/mappings.json`:
+
+    ```json
+    {
+      "products": {
+        "target_table": "products",
+        "primary_key": ["id"],
+        "column_mappings": {
+          "Product ID": {"target": "id", "type": "integer"},
+          "Name": {"target": "name", "type": "string"},
+          "Price": {"target": "price", "type": "float"}
+        }
+      }
+    }
+    ```
+
+    Benefits:
+    - Version control friendly
+    - Easy to review and diff
+    - Can be validated with JSON schemas
+  </Tab>
+  <Tab value="python">
+    **Python Configuration**
+
+    Create reusable configuration modules:
+
+    ```python
+    # config/import_config.py
+    from excel_to_sql import ExcelToSqlite
+
+    PRODUCTS_CONFIG = {
+        "target_table": "products",
+        "primary_key": ["id"],
+        "column_mappings": {
+            "Product ID": {"target": "id", "type": "integer"},
+            "Name": {"target": "name", "type": "string"}
+        }
+    }
+
+    def import_products(file_path: str):
+        sdk = ExcelToSqlite()
+        return sdk.import_excel(file_path, "products", **PRODUCTS_CONFIG)
+    ```
+
+    Benefits:
+    - Programmatic control
+    - Can add logic and conditions
+    - Reusable across scripts
+  </Tab>
+</Tabs>
+
+## Data Quality
+
+### Validation Rules
+
+Define validation rules early to catch data quality issues before they propagate to your database.
+
+```python
+from excel_to_sql import ExcelToSqlite
+from excel_to_sql.validators import ValidationRule
+
+sdk = ExcelToSqlite()
+
+# Always validate critical fields
+result = sdk.import_excel(
+    "customers.xlsx",
+    "customers",
+    validation_rules=[
+        # Primary key uniqueness
+        ValidationRule("customer_id", "unique"),
+
+        # Required fields
+        ValidationRule("email", "not_null"),
+        ValidationRule("name", "not_null"),
+
+        # Format validation
+        ValidationRule("email", "regex", pattern=r"^[^@]+@[^@]+\.[^@]+$"),
+        ValidationRule("phone", "regex", pattern=r"^\+?\d{10,15}$"),
+
+        # Business rules
+        ValidationRule("age", "range", min_value=0, max_value=120),
+        ValidationRule("status", "allowed_values", values=["active", "inactive", "pending"])
+    ]
+)
+
+# Check validation results
+if result['validation_errors']:
+    print(f"⚠️  Found {len(result['validation_errors'])} validation errors")
+    # Handle or log errors
+```
+
+### Quality Monitoring
+
+Regularly profile your tables to monitor data quality over time.
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Profile after each import
+tables = ["customers", "products", "orders"]
+for table in tables:
+    profile = sdk.profile_table(table)
+    score = profile['summary']['quality_score']
+    grade = profile['summary']['grade']
+
+    print(f"{table}: {score}/100 ({grade})")
+
+    # Alert on quality degradation
+    if score < 80:
+        print(f"⚠️  Quality alert for {table}")
+        # Send notification or log issue
+```
+
+## Import Strategies
+
+### Incremental Imports
+
+For frequently updated data, use incremental imports to only process new or changed rows.
+
+```python
+from excel_to_sql import ExcelToSqlite
+import pandas as pd
+
+sdk = ExcelToSqlite()
+
+# Get last import timestamp
+last_import = sdk.query("""
+    SELECT MAX(imported_at) as last_import
+    FROM __excel_to_sql_imports
+    WHERE type_name = 'orders'
+""").iloc[0]['last_import']
+
+# Read only new data from Excel
+df = pd.read_excel("orders.xlsx")
+if last_import:
+    df = df[df['updated_at'] > last_import]
+
+# Import only new rows
+if not df.empty:
+    df.to_excel("temp_new_orders.xlsx", index=False)
+    result = sdk.import_excel("temp_new_orders.xlsx", "orders")
+    print(f"✓ Imported {len(df)} new rows")
+else:
+    print("No new data to import")
+```
+
+### Batch Processing
+
+Split large imports into batches for better error handling and progress tracking.
+
+```python
+from excel_to_sql import ExcelToSqlite
+import pandas as pd
+
+sdk = ExcelToSqlite()
+
+# Configure batch size
+BATCH_SIZE = 10000
+df = pd.read_excel("large_file.xlsx")
+
+total_rows = len(df)
+batches = (total_rows // BATCH_SIZE) + 1
+
+for i in range(batches):
+    start = i * BATCH_SIZE
+    end = min((i + 1) * BATCH_SIZE, total_rows)
+    batch = df[start:end]
+
+    # Process batch
+    batch.to_excel(f"temp_batch_{i}.xlsx", index=False)
+    result = sdk.import_excel(f"temp_batch_{i}.xlsx", "mytype")
+
+    # Track progress
+    progress = ((i + 1) / batches) * 100
+    print(f"Progress: {progress:.1f}% ({end}/{total_rows} rows)")
+```
+
+### Idempotent Imports
+
+Design your imports to be idempotent - running them multiple times produces the same result.
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Use force=False (default) for hash-based change detection
+result = sdk.import_excel(
+    "products.xlsx",
+    "products",
+    force=False  # Skip if file hasn't changed
+)
+
+if result['skipped']:
+    print("✓ No changes detected, skipped import")
+else:
+    print(f"✓ Imported {result['rows_imported']} rows")
+```
+
+## Error Handling
+
+### Graceful Failures
+
+Handle errors gracefully to avoid partial imports and data corruption.
+
+```python
+from excel_to_sql import ExcelToSqlite
+import shutil
+
+sdk = ExcelToSqlite()
+
+# Create backup before import
+shutil.copy("data/database.db", "data/database.db.backup")
+
+try:
+    result = sdk.import_excel("products.xlsx", "products")
+
+    # Check for validation errors
+    if result.get('validation_errors'):
+        print("⚠️  Validation errors found:")
+        for error in result['validation_errors'][:5]:
+            print(f"  Row {error['row']}: {error['message']}")
+
+        # Decide whether to continue
+        if input("Continue despite validation errors? (y/n): ") != 'y':
+            raise Exception("Import cancelled due to validation errors")
+
+    print(f"✓ Import successful: {result['rows_imported']} rows")
+
+except Exception as e:
+    print(f"❌ Import failed: {e}")
+
+    # Restore backup
+    shutil.copy("data/database.db.backup", "data/database.db")
+    print("✓ Database restored from backup")
+```
+
+### Transaction Safety
+
+Use database transactions to ensure atomic operations.
+
+```python
+from excel_to_sql import ExcelToSqlite
+import sqlite3
+
+sdk = ExcelToSqlite()
+
+# Begin transaction
+conn = sqlite3.connect("data/database.db")
+cursor = conn.cursor()
+
+try:
+    cursor.execute("BEGIN TRANSACTION")
+
+    # Perform import
+    result = sdk.import_excel("orders.xlsx", "orders")
+
+    # Verify import
+    count = cursor.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+    if count != result['rows_imported']:
+        raise Exception(f"Row count mismatch: {count} != {result['rows_imported']}")
+
+    # Commit if successful
+    conn.commit()
+    print("✓ Import committed")
+
+except Exception as e:
+    conn.rollback()
+    print(f"❌ Import rolled back: {e}")
+
+finally:
+    conn.close()
+```
+
+## Performance
+
+### Database Optimization
+
+Regularly maintain your database for optimal performance.
+
+```bash
+# Rebuild database (removes fragmentation)
+sqlite3 data/database.db "VACUUM;"
+
+# Update statistics (improves query planning)
+sqlite3 data/database.db "ANALYZE;"
+
+# Optimize database
+sqlite3 data/database.db "PRAGMA optimize;"
+```
+
+### Index Strategy
+
+Create indexes on frequently queried columns to speed up searches.
+
+```python
+from excel_to_sql import ExcelToSqlite
+import sqlite3
+
+sdk = ExcelToSqlite()
+conn = sqlite3.connect("data/database.db")
+cursor = conn.cursor()
+
+# Identify frequently queried columns
+indexes = [
+    ("idx_products_category", "products", "category"),
+    ("idx_orders_customer_id", "orders", "customer_id"),
+    ("idx_orders_date", "orders", "order_date"),
+    ("idx_customers_email", "customers", "email")
+]
+
+# Create indexes
+for name, table, column in indexes:
+    cursor.execute(f"""
+        CREATE INDEX IF NOT EXISTS {name}
+        ON {table}({column});
+    """)
+
+conn.commit()
+conn.close()
+print("✓ Indexes created")
+```
+
+### Query Optimization
+
+Write efficient queries to avoid performance issues.
+
+```python
+# ❌ Bad: Fetches all data then filters
+result = sdk.query("SELECT * FROM orders WHERE status = 'pending'")
+pending_orders = [row for row in result if row['status'] == 'pending']
+
+# ✅ Good: Filters at database level
+result = sdk.query("SELECT * FROM orders WHERE status = 'pending'")
+
+# ✅ Better: Select only needed columns
+result = sdk.query("""
+    SELECT order_id, customer_id, total
+    FROM orders
+    WHERE status = 'pending'
+""")
+```
+
+## Security
+
+### Credential Management
+
+Never hardcode credentials in your scripts or configuration files.
+
+```python
+# ❌ Bad: Hardcoded credentials
+DATABASE_PATH = "/home/user/data/database.db"
+
+# ✅ Good: Use environment variables
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATABASE_PATH = os.getenv("DATABASE_PATH", "data/database.db")
+```
+
+### File Permissions
+
+Set appropriate file permissions on sensitive files.
+
+```bash
+# Restrict database file permissions
+chmod 600 data/database.db
+
+# Restrict config file permissions
+chmod 600 config/mappings.json
+
+# Make scripts executable
+chmod 755 scripts/*.py
+```
+
+### Input Validation
+
+Always validate file paths and user inputs.
+
+```python
+import os
+from pathlib import Path
+
+def safe_import(file_path: str, type_name: str):
+    # Validate file path
+    path = Path(file_path).resolve()
+
+    # Check file exists
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    # Check file extension
+    if path.suffix not in ['.xlsx', '.xls']:
+        raise ValueError(f"Invalid file type: {path.suffix}")
+
+    # Check file size (prevent DOS)
+    if path.stat().st_size > 100 * 1024 * 1024:  # 100MB
+        raise ValueError(f"File too large: {path.stat().st_size} bytes")
+
+    # Import safely
+    from excel_to_sql import ExcelToSqlite
+    sdk = ExcelToSqlite()
+    return sdk.import_excel(str(path), type_name)
+```
+
+## Backup Strategy
+
+### Automated Backups
+
+Implement automated backups with retention policies.
+
+```python
+import shutil
+from datetime import datetime
+import os
+
+def backup_database():
+    """Create timestamped backup with retention policy."""
+
+    # Create backup directory
+    backup_dir = "backups"
+    os.makedirs(backup_dir, exist_ok=True)
+
+    # Create timestamped backup
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = f"{backup_dir}/database_{timestamp}.db"
+    shutil.copy("data/database.db", backup_path)
+    print(f"✓ Backup created: {backup_path}")
+
+    # Retention policy: keep last 30 backups
+    backups = sorted(
+        [f for f in os.listdir(backup_dir) if f.startswith("database_")],
+        reverse=True
+    )
+
+    for old_backup in backups[30:]:
+        os.remove(f"{backup_dir}/{old_backup}")
+        print(f"✓ Removed old backup: {old_backup}")
+
+# Run backup before import
+backup_database()
+sdk.import_excel("products.xlsx", "products")
+```
+
+### Point-in-Time Recovery
+
+Enable WAL mode for better concurrent access and crash recovery.
+
+```python
+import sqlite3
+
+conn = sqlite3.connect("data/database.db")
+cursor = conn.cursor()
+
+# Enable WAL mode
+cursor.execute("PRAGMA journal_mode=WAL;")
+conn.commit()
+conn.close()
+
+print("✓ WAL mode enabled")
+```
+
+## Documentation
+
+### Document Your Schemas
+
+Maintain documentation for your database schema and type configurations.
+
+```markdown
+# Products Table
+
+**Purpose**: Store product catalog
+
+**Source**: `excels/products.xlsx`
+
+**Import Command**:
+```bash
+excel-to-sql import --file excels/products.xlsx --type products
+```
+
+**Schema**:
+- `id` (INTEGER, PRIMARY KEY): Product ID
+- `name` (TEXT): Product name
+- `price` (FLOAT): Unit price
+- `category` (TEXT): Product category
+- `created_at` (TIMESTAMP): Record creation time
+
+**Validations**:
+- `id` must be unique
+- `price` must be >= 0
+- `name` cannot be null
+```
+
+### Change Log
+
+Track changes to your configurations and schema.
+
+```markdown
+# Changelog
+
+## 2025-01-26
+- Added `email` validation to customers table
+- Created index on `orders.customer_id`
+- Changed `status` value mapping for products
+
+## 2025-01-25
+- Initial setup of customers table
+- Created base configuration files
+```
+
+## Testing
+
+### Test Data
+
+Always test imports with sample data before running on production data.
+
+```python
+from excel_to_sql import ExcelToSqlite
+import pandas as pd
+
+# Create test dataset
+df = pd.read_excel("products.xlsx")
+test_df = df.head(100)  # First 100 rows
+test_df.to_excel("test_products.xlsx", index=False)
+
+# Test import
+test_db = "test_database.db"
+sdk = ExcelToSqlite(database_path=test_db)
+
+result = sdk.import_excel("test_products.xlsx", "products")
+print(f"✓ Test import: {result['rows_imported']} rows")
+
+# Verify results
+count = sdk.query("SELECT COUNT(*) as count FROM products").iloc[0]['count']
+assert count == 100, f"Expected 100 rows, got {count}"
+
+print("✓ Test passed")
+```
+
+### Data Validation Queries
+
+Run validation queries after import to verify data integrity.
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Check for nulls in required fields
+nulls = sdk.query("""
+    SELECT 'name' as column, COUNT(*) as count
+    FROM products
+    WHERE name IS NULL
+    UNION ALL
+    SELECT 'price', COUNT(*)
+    FROM products
+    WHERE price IS NULL
+""")
+
+for row in nulls.itertuples():
+    if row.count > 0:
+        print(f"⚠️  {row.column}: {row.count} null values")
+
+# Check for duplicates
+duplicates = sdk.query("""
+    SELECT id, COUNT(*) as count
+    FROM products
+    GROUP BY id
+    HAVING count > 1
+""")
+
+if not duplicates.empty:
+    print(f"⚠️  Found {len(duplicates)} duplicate IDs")
+```
+
+## See Also
+
+- [Migration Guide](/docs/guides/migration) - Complete migration workflow
+- [Performance Guide](/docs/guides/performance) - Optimization techniques
+- [Troubleshooting](/docs/guides/troubleshooting) - Common issues and solutions
