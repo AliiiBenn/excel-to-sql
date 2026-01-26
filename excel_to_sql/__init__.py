@@ -1,6 +1,6 @@
 """Excel to SQL - Import Excel files to SQL and export back."""
 
-__version__ = "0.2.0"
+from excel_to_sql.__version__ import __version__
 
 # Main SDK
 from excel_to_sql.sdk import ExcelToSqlite
