@@ -1,0 +1,90 @@
+---
+title: Documentation
+description: excel-to-sql documentation
+sidebar:
+  order: 0
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+# Welcome to excel-to-sql Documentation
+
+Comprehensive documentation for the excel-to-sql CLI tool and Python SDK.
+
+<Cards>
+  <Card title="Getting Started" href="docs/getting-started" icon="book-open">
+    Quick start guide and installation instructions
+  </Card>
+  <Card title="CLI Reference" href="docs/cli-reference" icon="terminal">
+    Complete command-line interface documentation
+  </Card>
+  <Card title="Auto-Pilot Mode" href="docs/auto-pilot" icon="zap">
+    Zero-configuration import with pattern detection
+  </Card>
+  <Card title="Python SDK" href="docs/python-sdk" icon="code">
+    Programmatic access and automation
+  </Card>
+  <Card title="Examples" href="docs/examples" icon="lightbulb">
+    Real-world usage examples
+  </Card>
+</Cards>
+
+## Quick Links
+
+### For Beginners
+
+1. [Install excel-to-sql](docs/getting-started/installation)
+2. [Quick Start Guide](docs/getting-started)
+3. [Initialize Your First Project](docs/cli-reference/init)
+
+### For CLI Users
+
+- [init command](docs/cli-reference/init) - Create project structure
+- [import command](docs/cli-reference/import) - Import Excel files
+- [export command](docs/cli-reference/export) - Export to Excel
+- [magic command](docs/cli-reference/magic) - Auto-Pilot mode
+
+### For Developers
+
+- [Python SDK Basics](docs/python-sdk) - SDK overview
+- [Transformations](docs/python-sdk/transformations) - Data transformations
+- [Validators](docs/python-sdk/validators) - Data validation
+- [Examples](docs/examples) - Code examples
+
+## Key Features
+
+- **Smart Import**: Automatic schema detection with intelligent type inference
+- **Auto-Pilot Mode**: Zero-configuration setup with pattern detection and quality scoring
+- **Data Transformations**: Value mappings, calculated columns, custom hooks
+- **Quality Analysis**: Comprehensive validation with detailed HTML reports
+- **Python SDK**: Full programmatic access for automation
+- **Rich CLI**: Beautiful terminal output with progress tracking
+
+## Getting Help
+
+```bash
+# CLI help
+excel-to-sql --help
+excel-to-sql <command> --help
+
+# Python SDK help
+import excel_to_sql
+help(excel_to_sql)
+```
+
+## Version
+
+Current version: **0.4.1**
+
+Check your version:
+```bash
+excel-to-sql version
+```
+
+## Support
+
+- **GitHub Issues**: https://github.com/wareflowx/excel-to-sql/issues
+- **PyPI Package**: https://pypi.org/project/excel-to-sql/
+- **Repository**: https://github.com/wareflowx/excel-to-sql
+
+Choose a section from the sidebar to get started!
