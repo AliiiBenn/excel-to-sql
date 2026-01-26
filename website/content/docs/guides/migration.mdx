@@ -66,28 +66,25 @@ Classify your data by importance:
 
 Ensure consistent Excel file formats:
 
-<Tabs>
-  <Tab value="naming">
-    **File Naming**
-    - Use lowercase with underscores: `sales_data_2024.xlsx`
-    - Avoid spaces and special characters
-    - Include date stamps for versioning
-  </Tab>
-  <Tab value="structure">
-    **Sheet Structure**
-    - Use consistent sheet names across files
-    - One table per sheet when possible
-    - Avoid merged cells
-    - Use header rows in row 1
-  </Tab>
-  <Tab value="types">
-    **Data Types**
-    - Convert text-formatted numbers to numeric
-    - Standardize date formats (ISO 8601: YYYY-MM-DD)
-    - Remove trailing spaces from text fields
-    - Ensure consistent boolean values
-  </Tab>
-</Tabs>
+**File Naming**
+
+- Use lowercase with underscores: `sales_data_2024.xlsx`
+- Avoid spaces and special characters
+- Include date stamps for versioning
+
+**Sheet Structure**
+
+- Use consistent sheet names across files
+- One table per sheet when possible
+- Avoid merged cells
+- Use header rows in row 1
+
+**Data Types**
+
+- Convert text-formatted numbers to numeric
+- Standardize date formats (ISO 8601: YYYY-MM-DD)
+- Remove trailing spaces from text fields
+- Ensure consistent boolean values
 
 ### Handle Multi-File Workflows
 
@@ -224,18 +221,15 @@ for table in ["customers", "products", "orders"]:
 
 Always create backups before migrating:
 
-<Tabs>
-  <Tab value="automatic">
-    **Auto-Pilot Backups**
+**Auto-Pilot Backups**
 
 Auto-Pilot creates automatic backups:
 
 ```bash
 .excel-to-sql/backups/file_YYYYMMDD_HHMMSS.xlsx.bak
 ```
-  </Tab>
-  <Tab value="manual">
-    **Manual Backups**
+
+**Manual Backups**
 
 ```bash
 # Backup original Excel files
@@ -244,8 +238,6 @@ cp -r data/ backups/excel_originals_$(date +%Y%m%d)/
 # Backup database
 cp data/database.db backups/database_$(date +%Y%m%d).db
 ```
-  </Tab>
-</Tabs>
 
 ### Test Migration
 
@@ -308,9 +300,7 @@ sqlite3 data/database.db "
 
 Verify migrated data matches source:
 
-<Tabs>
-  <Tab value="counts">
-    **Row Counts**
+**Row Counts**
 
 ```python
 import pandas as pd
@@ -325,9 +315,8 @@ sql_count = sdk.query("SELECT COUNT(*) as count FROM products").iloc[0]['count']
 print(f"Excel: {excel_count}, SQLite: {sql_count}")
 assert excel_count == sql_count, "Row count mismatch!"
 ```
-  </Tab>
-  <Tab value="sampling">
-    **Data Sampling**
+
+**Data Sampling**
 
 ```python
 # Sample random rows for comparison
@@ -345,9 +334,8 @@ for col in ["id", "name", "price"]:
     if missing or extra:
         print(f"{col}: Missing {len(missing)}, Extra {len(extra)}")
 ```
-  </Tab>
-  <Tab value="aggregates">
-    **Aggregate Checks**
+
+**Aggregate Checks**
 
 ```python
 # Compare aggregations
@@ -357,8 +345,6 @@ sql_sum = sdk.query("SELECT SUM(total) as sum FROM orders").iloc[0]['sum']
 print(f"Excel total: {excel_sum:.2f}")
 print(f"SQLite total: {sql_sum:.2f}")
 ```
-  </Tab>
-</Tabs>
 
 ### Business Logic Validation
 
@@ -379,9 +365,7 @@ sdk.query("""
 
 ### Gradual Cutover
 
-<Tabs>
-  <Tab value="parallel">
-    **Parallel Operation**
+**Parallel Operation**
 
 Keep both systems running during transition:
 
@@ -391,9 +375,8 @@ Keep both systems running during transition:
 ```
 
 Users access data through new interface while Excel files remain accessible.
-  </Tab>
-  <Tab value="redirect">
-    **Read-Only Access**
+
+**Read-Only Access**
 
 Set Excel files to read-only:
 
@@ -402,9 +385,8 @@ chmod 444 data/*.xlsx
 ```
 
 Update all references to use SQLite as data source.
-  </Tab>
-  <Tab value="deprecate">
-    **Deprecation Notice**
+
+**Deprecation Notice**
 
 Communicate timeline:
 
@@ -412,39 +394,31 @@ Communicate timeline:
 - **Week 3-4**: Migrate all read operations to SQLite
 - **Week 5-6**: Make Excel files read-only
 - **Week 7-8**: Archive Excel files
-  </Tab>
-</Tabs>
 
 ### Training
 
 Train team on new workflows:
 
-<Tabs>
-  <Tab value="end-users">
-    **End Users**
+**End Users**
 
 Focus on:
 - Querying with SQL basics
 - Export functionality
 - New report generation
-  </Tab>
-  <Tab value="analysts">
-    **Data Analysts**
+
+**Data Analysts**
 
 Focus on:
 - Advanced SQL queries
 - Python SDK usage
 - Data quality profiling
-  </Tab>
-  <Tab value="admins">
-    **Administrators**
+
+**Administrators**
 
 Focus on:
 - System maintenance
 - Backup procedures
 - Performance monitoring
-  </Tab>
-</Tabs>
   </Tab>
 </Tabs>
 
