@@ -7,7 +7,11 @@ sidebar:
 
 ## Priority Levels
 
+Auto-Pilot prioritizes recommendations to help you focus on the most impactful improvements first.
+
 ### HIGH Priority
+
+These issues can break your data pipeline and should be addressed immediately before importing data.
 
 **Critical issues affecting data integrity:**
 
@@ -30,6 +34,8 @@ sidebar:
 
 ### MEDIUM Priority
 
+These issues don't prevent data import but can affect analysis accuracy and reporting quality.
+
 **Quality improvements:**
 
 - Null values 5-10%
@@ -50,6 +56,8 @@ sidebar:
 
 ### LOW Priority
 
+These are optional improvements that can enhance data quality but aren't critical for functionality.
+
 **Nice-to-have optimizations:**
 
 - Naming conventions
@@ -69,9 +77,13 @@ sidebar:
 
 ## Auto-Fixable Issues
 
+Some common data quality problems can be automatically corrected by Auto-Pilot, saving you manual cleanup time.
+
 Auto-Pilot can automatically fix some issues:
 
 ### 1. French Code Translation
+
+Automatically translates French operational codes to their English equivalents for consistency.
 
 ```python
 # Before: ENTRÉE, SORTIE, ACTIF, INACTIF
@@ -108,6 +120,8 @@ Auto-Pilot can automatically fix some issues:
 
 ### 3. Split Fields
 
+Combines redundant columns that contain mutually exclusive values into a single column using SQL COALESCE.
+
 ```python
 # Before: status_active, status_inactive
 # After: COALESCE(status_active, status_inactive) as status
@@ -123,7 +137,11 @@ Auto-Pilot can automatically fix some issues:
 
 ## Apply Recommendations
 
+You can apply recommendations either interactively or by manually editing the generated configuration files.
+
 ### Interactive Mode
+
+Interactive mode gives you full control over which recommendations to accept.
 
 ```bash
 excel-to-sql magic --data . --interactive
@@ -135,6 +153,8 @@ You'll see recommendations and can choose to:
 - **Skip** specific recommendations
 
 ### Manual Application
+
+For full control, manually edit the configuration file to apply recommendations exactly as you want them.
 
 Edit `.excel-to-sql/mappings.json` to apply recommendations:
 
@@ -157,6 +177,8 @@ Edit `.excel-to-sql/mappings.json` to apply recommendations:
 
 ## Recommendation Engine
 
+The recommendation engine combines insights from pattern detection, quality analysis, and data modeling best practices to generate actionable advice.
+
 The recommendation engine analyzes:
 
 **1. Pattern Detection Results**
@@ -175,6 +197,8 @@ The recommendation engine analyzes:
 - Data modeling principles
 
 ## Recommendation Format
+
+Each recommendation includes priority, category, detailed description, and confidence score to help you make informed decisions.
 
 ```json
 {
