@@ -1,0 +1,26 @@
+{
+  "pages": [
+    "index",
+    "installation",
+    "---Getting Started---",
+    "getting-started/index",
+    "---CLI Reference---",
+    "cli-reference/config",
+    "cli-reference/export",
+    "cli-reference/import",
+    "cli-reference/init",
+    "cli-reference/magic",
+    "cli-reference/status",
+    "cli-reference/version",
+    "---Auto-Pilot---",
+    "auto-pilot/index",
+    "auto-pilot/pattern-detection",
+    "auto-pilot/quality-scoring",
+    "auto-pilot/recommendations",
+    "---Python SDK---",
+    "python-sdk/transformations",
+    "python-sdk/validators",
+    "---Examples---",
+    "examples/index"
+  ]
+}

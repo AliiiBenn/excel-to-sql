@@ -1,0 +1,85 @@
+---
+title: Examples
+description: Real-world usage examples
+sidebar:
+  order: 40
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Examples
+
+Real-world examples and use cases for excel-to-sql.
+
+## E-commerce Product Catalog
+
+Import and manage product data:
+
+```python
+from excel_to_sql import ExcelToSqlite
+from excel_to_sql.transformations import CalculatedColumn
+
+sdk = ExcelToSqlite()
+
+# Import products with value mapping
+result = sdk.import_excel(
+    "products.xlsx",
+    "products",
+    value_mappings={
+        "status": {"1": "In Stock", "0": "Out of Stock"}
+    },
+    calculated_columns=[
+        CalculatedColumn("inventory_value", "quantity * unit_cost")
+    ]
+)
+
+print(f"✓ Imported {result['rows_imported']} products")
+```
+
+## Data Validation Pipeline
+
+```python
+from excel_to_sql import ExcelToSqlite
+from excel_to_sql.validators import ValidationRule
+
+sdk = ExcelToSqlite()
+
+result = sdk.import_excel(
+    "customers.xlsx",
+    "customers",
+    validation_rules=[
+        ValidationRule("email", "unique"),
+        ValidationRule("email", "regex", pattern=r"^[^@]+@[^@]+\.[^@]+$"),
+        ValidationRule("age", "range", min_value=18, max_value=120)
+    ]
+)
+
+if result['validation_errors']:
+    print(f"⚠️  {len(result['validation_errors'])} errors found")
+```
+
+## Quality Profiling
+
+```python
+from excel_to_sql import ExcelToSqlite
+
+sdk = ExcelToSqlite()
+
+# Import data
+sdk.import_excel("products.xlsx", "products")
+
+# Generate quality report
+profile = sdk.profile_table("products")
+
+print(f"Quality Score: {profile['summary']['quality_score']}/100")
+print(f"Grade: {profile['summary']['grade']}")
+
+# Export HTML report
+sdk.generate_quality_report("products", output="quality_report.html")
+```
+
+## See Also
+
+- [CLI Reference](/docs/cli-reference) - CLI examples
+- [Python SDK](/docs/python-sdk) - SDK documentation
+- [Auto-Pilot Mode](/docs/auto-pilot) - Automatic configuration
